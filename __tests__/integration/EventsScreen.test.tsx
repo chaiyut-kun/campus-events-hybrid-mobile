@@ -98,4 +98,16 @@ describe('Integration Test: EventsScreen', () => {
     const closeBtn = getByLabelText('Close detail modal');
     fireEvent.press(closeBtn);
   });
+
+  it('adapts layout to 2 columns on tablet / wide screens (width >= 720)', async () => {
+    const useWindowDimensionsSpy = jest
+      .spyOn(require('react-native'), 'useWindowDimensions')
+      .mockReturnValue({ width: 800, height: 1024, scale: 2, fontScale: 1 });
+
+    const { getByText } = await render(<EventsScreen />);
+    expect(getByText('Campus Events')).toBeTruthy();
+    expect(getByText('Campus Hackathon 2026: AI for Good')).toBeTruthy();
+
+    useWindowDimensionsSpy.mockRestore();
+  });
 });

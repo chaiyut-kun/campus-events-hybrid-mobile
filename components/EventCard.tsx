@@ -5,6 +5,8 @@ import {
   View,
   Image,
   Pressable,
+  StyleProp,
+  ViewStyle,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { CampusEvent } from '../types/event';
@@ -15,6 +17,7 @@ export type EventCardProps = {
   isFavorite: boolean;
   onOpen: (id: string) => void;
   onToggleFavorite: (id: string) => void;
+  style?: StyleProp<ViewStyle>;
 };
 
 export function EventCard({
@@ -22,6 +25,7 @@ export function EventCard({
   isFavorite,
   onOpen,
   onToggleFavorite,
+  style,
 }: EventCardProps) {
   const [imageError, setImageError] = useState(false);
 
@@ -38,7 +42,7 @@ export function EventCard({
 
   return (
     <Pressable
-      style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+      style={({ pressed }) => [styles.card, style, pressed && styles.cardPressed]}
       onPress={() => onOpen(event.id)}
       accessibilityRole="button"
       accessibilityLabel={`เปิดรายละเอียดกิจกรรม ${event.title}`}
@@ -108,6 +112,7 @@ export function EventCard({
                 ? `นำ ${event.title} ออกจากรายการโปรด`
                 : `เพิ่ม ${event.title} ในรายการโปรด`
             }
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
             <Ionicons
               name={isFavorite ? 'star' : 'star-outline'}
@@ -232,9 +237,11 @@ const styles = StyleSheet.create({
   favoriteButton: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    minHeight: 44,
     borderRadius: rounded.full,
     borderWidth: 1,
   },

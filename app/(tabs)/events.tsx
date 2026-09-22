@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   StyleSheet,
   Text,
@@ -8,16 +8,30 @@ import {
   Modal,
   ScrollView,
   Image,
+  RefreshControl,
+  useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { EventCard } from '../../components/EventCard';
 import { BurgerMenuModal } from '../../components/BurgerMenuModal';
+import { LoadingState } from '../../components/LoadingState';
+import { ErrorState } from '../../components/ErrorState';
+import { EmptyState } from '../../components/EmptyState';
 import { mockEvents, toggleFavoriteId } from '../../data/events';
+import { EventListState } from '../../types/event';
 import { colors, elevation, rounded, spacing } from '../../constants/theme';
 
 export default function EventsScreen() {
+  const { width } = useWindowDimensions();
+  const numColumns = width >= 720 ? 2 : 1;
+
+  const [listState, setListState] = useState<EventListState>({
+    status: 'ready',
+    events: mockEvents,
+  });
+  const [refreshing, setRefreshing] = useState(false);
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
   const [filter, setFilter] = useState<'all' | 'saved'>('all');
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
@@ -25,12 +39,15 @@ export default function EventsScreen() {
 
   // Derived values
   const savedCount = favoriteIds.length;
+  const currentEvents =
+    listState.status === 'ready' ? listState.events : mockEvents;
+
   const filteredEvents =
     filter === 'saved'
-      ? mockEvents.filter((evt) => favoriteIds.includes(evt.id))
-      : mockEvents;
+      ? currentEvents.filter((evt) => favoriteIds.includes(evt.id))
+      : currentEvents;
 
-  const selectedEvent = mockEvents.find((evt) => evt.id === selectedEventId);
+  const selectedEvent = currentEvents.find((evt) => evt.id === selectedEventId);
 
   const handleToggleFavorite = (id: string) => {
     setFavoriteIds((current) => toggleFavoriteId(current, id));
@@ -44,8 +61,24 @@ export default function EventsScreen() {
     setSelectedEventId(null);
   };
 
+  const handleRefresh = useCallback(() => {
+    setRefreshing(true);
+    // Simulate network latency
+    setTimeout(() => {
+      setListState({ status: 'ready', events: mockEvents });
+      setRefreshing(false);
+    }, 600);
+  }, []);
+
+  const handleRetry = () => {
+    setListState({ status: 'loading' });
+    setTimeout(() => {
+      setListState({ status: 'ready', events: mockEvents });
+    }, 400);
+  };
+
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top']}>
+    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
       <StatusBar style="dark" />
 
       {/* Header */}
@@ -64,12 +97,13 @@ export default function EventsScreen() {
             <Text style={styles.savedBadgeText}>{savedCount}</Text>
           </View>
 
-          {/* Burger Menu Button */}
+          {/* Burger Menu Button (44x44 touch target) */}
           <Pressable
             onPress={() => setIsMenuOpen(true)}
             style={({ pressed }) => [styles.menuButton, pressed && styles.pressed]}
             accessibilityRole="button"
             accessibilityLabel="Open navigation menu"
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
             <Ionicons name="menu" size={26} color={colors.onSurface} />
           </Pressable>
@@ -82,7 +116,8 @@ export default function EventsScreen() {
           style={[styles.filterTab, filter === 'all' && styles.filterTabActive]}
           onPress={() => setFilter('all')}
           accessibilityRole="button"
-          accessibilityLabel={`Show all events, total ${mockEvents.length}`}
+          accessibilityLabel={`Show all events, total ${currentEvents.length}`}
+          hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
         >
           <Text
             style={[
@@ -90,7 +125,7 @@ export default function EventsScreen() {
               filter === 'all' && styles.filterTabTextActive,
             ]}
           >
-            All Events ({mockEvents.length})
+            All Events ({currentEvents.length})
           </Text>
         </Pressable>
 
@@ -99,6 +134,7 @@ export default function EventsScreen() {
           onPress={() => setFilter('saved')}
           accessibilityRole="button"
           accessibilityLabel={`Show saved events, total ${savedCount}`}
+          hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
         >
           <Ionicons
             name={filter === 'saved' ? 'star' : 'star-outline'}
@@ -116,42 +152,60 @@ export default function EventsScreen() {
         </Pressable>
       </View>
 
-      {/* Events List */}
-      <FlatList
-        data={filteredEvents}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator={false}
-        renderItem={({ item }) => (
-          <EventCard
-            event={item}
-            isFavorite={favoriteIds.includes(item.id)}
-            onOpen={handleOpenEvent}
-            onToggleFavorite={handleToggleFavorite}
-          />
-        )}
-        ListEmptyComponent={
-          <View style={styles.emptyStateContainer}>
-            <View style={styles.emptyIconCircle}>
-              <Ionicons name="bookmark-outline" size={36} color={colors.outline} />
-            </View>
-            <Text style={styles.emptyStateTitle}>ยังไม่มีกิจกรรมที่บันทึกไว้</Text>
-            <Text style={styles.emptyStateSubtitle}>
-              กดที่รูปดาวบนการ์ดกิจกรรมเพื่อบันทึกงานที่คุณสนใจลงในรายการโปรด
-            </Text>
-            <Pressable
-              style={({ pressed }) => [
-                styles.browseAllButton,
-                pressed && styles.pressed,
-              ]}
-              onPress={() => setFilter('all')}
-              accessibilityRole="button"
-            >
-              <Text style={styles.browseAllButtonText}>ดูกิจกรรมทั้งหมด</Text>
-            </Pressable>
-          </View>
-        }
-      />
+      {/* Main Content Render by State */}
+      {listState.status === 'loading' ? (
+        <LoadingState message="กำลังโหลดรายการกิจกรรม..." />
+      ) : listState.status === 'error' ? (
+        <ErrorState message={listState.message} onRetry={handleRetry} />
+      ) : (
+        <FlatList
+          key={`events-grid-${numColumns}`}
+          data={filteredEvents}
+          numColumns={numColumns}
+          keyExtractor={(item) => item.id}
+          columnWrapperStyle={numColumns > 1 ? styles.columnWrapper : undefined}
+          contentContainerStyle={[
+            styles.listContent,
+            filteredEvents.length === 0 && styles.emptyListContent,
+          ]}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              colors={[colors.primary]}
+              tintColor={colors.primary}
+            />
+          }
+          renderItem={({ item }) => (
+            <EventCard
+              event={item}
+              isFavorite={favoriteIds.includes(item.id)}
+              onOpen={handleOpenEvent}
+              onToggleFavorite={handleToggleFavorite}
+              style={numColumns > 1 ? styles.gridCard : undefined}
+            />
+          )}
+          ListEmptyComponent={
+            <EmptyState
+              title={
+                filter === 'saved'
+                  ? 'ยังไม่มีกิจกรรมที่บันทึกไว้'
+                  : 'ไม่พบกิจกรรมในขณะนี้'
+              }
+              description={
+                filter === 'saved'
+                  ? 'กดที่รูปดาวบนการ์ดกิจกรรมเพื่อบันทึกงานที่คุณสนใจลงในรายการโปรด'
+                  : 'โปรดลองตรวจสอบการเชื่อมต่อ หรือกลับมาดูใหม่อีกครั้ง'
+              }
+              actionLabel={filter === 'saved' ? 'ดูกิจกรรมทั้งหมด' : 'รีเฟรชข้อมูล'}
+              onAction={
+                filter === 'saved' ? () => setFilter('all') : handleRefresh
+              }
+            />
+          }
+        />
+      )}
 
       {/* Event Detail Modal */}
       {selectedEvent && (
@@ -174,6 +228,7 @@ export default function EventsScreen() {
                 style={({ pressed }) => [styles.closeModalBtn, pressed && styles.pressed]}
                 accessibilityRole="button"
                 accessibilityLabel="Close detail modal"
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               >
                 <Ionicons name="close" size={22} color={colors.onSurface} />
               </Pressable>
@@ -239,7 +294,7 @@ export default function EventsScreen() {
                   {selectedEvent.description}
                 </Text>
 
-                {/* Favorite Action Button in Modal */}
+                {/* Favorite Action Button in Modal (minHeight: 44) */}
                 <Pressable
                   style={({ pressed }) => [
                     styles.modalFavoriteBtn,
@@ -250,6 +305,7 @@ export default function EventsScreen() {
                   ]}
                   onPress={() => handleToggleFavorite(selectedEvent.id)}
                   accessibilityRole="button"
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 >
                   <Ionicons
                     name={
@@ -345,8 +401,8 @@ const styles = StyleSheet.create({
     color: colors.primary,
   },
   menuButton: {
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -362,6 +418,7 @@ const styles = StyleSheet.create({
     gap: 4,
     paddingHorizontal: 14,
     paddingVertical: 8,
+    minHeight: 36,
     borderRadius: rounded.full,
     backgroundColor: colors.surfaceContainerLow,
   },
@@ -381,45 +438,15 @@ const styles = StyleSheet.create({
     paddingTop: spacing.sm,
     paddingBottom: spacing.xl,
   },
-  emptyStateContainer: {
-    padding: spacing.xl,
-    alignItems: 'center',
+  emptyListContent: {
+    flexGrow: 1,
     justifyContent: 'center',
-    marginTop: spacing.xl,
   },
-  emptyIconCircle: {
-    width: 72,
-    height: 72,
-    borderRadius: rounded.full,
-    backgroundColor: colors.surfaceContainerLow,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.md,
+  columnWrapper: {
+    gap: spacing.md,
   },
-  emptyStateTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: colors.onSurface,
-    textAlign: 'center',
-    marginBottom: spacing.xs,
-  },
-  emptyStateSubtitle: {
-    fontSize: 13,
-    color: colors.outline,
-    textAlign: 'center',
-    lineHeight: 18,
-    marginBottom: spacing.lg,
-  },
-  browseAllButton: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: 10,
-    borderRadius: rounded.DEFAULT,
-  },
-  browseAllButtonText: {
-    color: colors.onPrimary,
-    fontWeight: '600',
-    fontSize: 14,
+  gridCard: {
+    flex: 1,
   },
   pressed: {
     opacity: 0.7,
@@ -449,8 +476,8 @@ const styles = StyleSheet.create({
     color: colors.secondary,
   },
   closeModalBtn: {
-    width: 32,
-    height: 32,
+    width: 36,
+    height: 36,
     borderRadius: rounded.full,
     backgroundColor: colors.surfaceContainerLow,
     alignItems: 'center',
@@ -539,7 +566,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.sm,
-    paddingVertical: 14,
+    minHeight: 44,
+    paddingVertical: 12,
     borderRadius: rounded.lg,
     borderWidth: 1,
     marginTop: spacing.sm,

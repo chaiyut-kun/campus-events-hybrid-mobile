@@ -13,3 +13,11 @@ export type CampusEvent = {
   location: CampusLocation;
   category: string;
 };
+
+export type EventListStatus = 'loading' | 'error' | 'ready';
+
+export type EventListState =
+  | { status: 'loading' }
+  | { status: 'error'; message: string }
+  | { status: 'ready'; events: CampusEvent[] };
+
