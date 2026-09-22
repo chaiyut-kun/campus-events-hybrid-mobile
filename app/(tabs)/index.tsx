@@ -1,12 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { StyleSheet, Text, View, Pressable, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { BurgerMenuModal } from '../../components/BurgerMenuModal';
 import { colors, elevation, rounded, spacing } from '../../constants/theme';
 
 export default function HomeScreen() {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
   const handleOpenProfile = () => {
     router.push('/profile');
   };
@@ -39,10 +42,10 @@ export default function HomeScreen() {
           </Pressable>
 
           <Pressable
-            onPress={handleOpenProfile}
+            onPress={() => setIsMenuOpen(true)}
             style={({ pressed }) => [styles.menuButton, pressed && styles.pressed]}
             accessibilityRole="button"
-            accessibilityLabel="Open Profile by Menu"
+            accessibilityLabel="Open navigation menu"
           >
             <Ionicons name="menu" size={26} color={colors.onSurface} />
           </Pressable>
@@ -51,6 +54,12 @@ export default function HomeScreen() {
 
       {/* Body intentionally blank per instruction and Figma design */}
       <View style={styles.body} />
+
+      {/* Floating Navigation Menu */}
+      <BurgerMenuModal
+        visible={isMenuOpen}
+        onClose={() => setIsMenuOpen(false)}
+      />
     </SafeAreaView>
   );
 }
