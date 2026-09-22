@@ -1,5 +1,20 @@
 This is an Expo/React Native mobile application. Prioritize mobile-first patterns, performance, and cross-platform compatibility.
 
+# General Instruction
+project for Learning labs Mobile application first, Prototype by EXPO Go
+- use Expo SDK version 57
+- read Labs documents in [./labs-docs/*](./labs-docs/)
+- use Example as base of code to apply with projects 
+- use English as main and thai lang to communicate with human
+- use English code as Code comments
+- always testing code on unit testing & Integration testing
+
+# Plans
+- Do labs step at a time
+- Integration labs by labs features by features
+- Read Instruction of each labs, plans for implement, Extract to tasks
+
+
 ## Expo has changed — do not trust your training data
 
 Expo ships breaking changes every SDK release. APIs you remember are likely renamed, moved, or removed. Before writing any code that touches an Expo, EAS, or React Native API:
