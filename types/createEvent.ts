@@ -5,6 +5,8 @@ export type CreateEventForm = {
   title: string;
   category: string;
   locationName: string;
+  latitude: number;
+  longitude: number;
   description: string;
   imageUri: string | null;
 };

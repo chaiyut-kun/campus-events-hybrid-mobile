@@ -19,6 +19,8 @@ import { BurgerMenuModal } from '../../components/BurgerMenuModal';
 import { SearchBar } from '../../components/SearchBar';
 import { EventRegistrationModal } from '../../components/EventRegistrationModal';
 import { CreateEventModal } from '../../components/CreateEventModal';
+import { EventVenueMap } from '../../components/EventVenueMap';
+import { AllEventsMapView } from '../../components/AllEventsMapView';
 import { LoadingState } from '../../components/LoadingState';
 import { ErrorState } from '../../components/ErrorState';
 import { EmptyState } from '../../components/EmptyState';
@@ -45,6 +47,7 @@ export default function EventsScreen() {
   const [registrationEventId, setRegistrationEventId] = useState<string | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
 
   // Derived: current events source
   const currentEvents =
@@ -135,6 +138,22 @@ export default function EventsScreen() {
             <Text style={styles.savedBadgeText}>{savedCount}</Text>
           </View>
 
+          {/* View Mode Toggle (List / Map) */}
+          <Pressable
+            style={({ pressed }) => [styles.viewModeToggle, pressed && styles.pressed]}
+            onPress={() => setViewMode((prev) => (prev === 'list' ? 'map' : 'list'))}
+            accessibilityRole="button"
+            accessibilityLabel={viewMode === 'list' ? 'สลับไปยังมุมมองแผนที่' : 'สลับไปยังมุมมองรายการ'}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            testID="view-mode-toggle"
+          >
+            <Ionicons
+              name={viewMode === 'list' ? 'map-outline' : 'list-outline'}
+              size={20}
+              color={colors.primary}
+            />
+          </Pressable>
+
           {/* Burger Menu Button (44x44 touch target) */}
           <Pressable
             onPress={() => setIsMenuOpen(true)}
@@ -148,8 +167,15 @@ export default function EventsScreen() {
         </View>
       </View>
 
-      {/* Search Bar */}
-      <SearchBar value={searchQuery} onChangeText={setSearchQuery} />
+      {viewMode === 'map' ? (
+        <AllEventsMapView
+          events={filteredEvents}
+          onSelectEvent={handleOpenEvent}
+        />
+      ) : (
+        <>
+          {/* Search Bar */}
+          <SearchBar value={searchQuery} onChangeText={setSearchQuery} />
 
       {/* Filter Tabs */}
       <View style={styles.filterBar}>
@@ -261,6 +287,8 @@ export default function EventsScreen() {
           }
         />
       )}
+        </>
+      )}
 
       {/* Event Detail Modal */}
       {selectedEvent && (
@@ -342,6 +370,12 @@ export default function EventsScreen() {
                     </View>
                   </View>
                 </View>
+
+                {/* Embedded Venue Map */}
+                <EventVenueMap
+                  venue={selectedEvent.location}
+                  eventTitle={selectedEvent.title}
+                />
 
                 {/* Full Description */}
                 <Text style={styles.modalSectionHeader}>About This Event</Text>
@@ -719,5 +753,13 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 10,
     elevation: 6,
+  },
+  viewModeToggle: {
+    width: 36,
+    height: 36,
+    borderRadius: rounded.full,
+    backgroundColor: '#DCF2E8',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

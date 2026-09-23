@@ -20,9 +20,11 @@ import { useCameraPermissions } from 'expo-camera';
 import { colors, rounded, spacing, elevation } from '../constants/theme';
 import { ImagePickerActionSheet } from './ImagePickerActionSheet';
 import { CameraViewModal } from './CameraViewModal';
+import { LocationPickerMap } from './LocationPickerMap';
 import { CreateEventForm, CreateEventErrors } from '../types/createEvent';
 import { validateEventImage } from '../utils/validateEventImage';
 import { CampusEvent } from '../types/event';
+import { CAMPUS_CENTER_COORDS } from '../services/location';
 
 type Props = {
   visible: boolean;
@@ -36,6 +38,8 @@ const initialForm: CreateEventForm = {
   title: '',
   category: 'Technology',
   locationName: '',
+  latitude: CAMPUS_CENTER_COORDS.latitude,
+  longitude: CAMPUS_CENTER_COORDS.longitude,
   description: '',
   imageUri: null,
 };
@@ -171,6 +175,17 @@ export function CreateEventModal({ visible, onClose, onSubmit }: Props) {
     updateField('imageUri', null);
   };
 
+  const handleCoordinateChange = (
+    coords: { latitude: number; longitude: number },
+    suggestedName?: string,
+  ) => {
+    updateField('latitude', coords.latitude);
+    updateField('longitude', coords.longitude);
+    if (suggestedName && !formRef.current.locationName.trim()) {
+      updateField('locationName', suggestedName);
+    }
+  };
+
   // ── Form Validation & Submit ───────────────────────────────────────
 
   const handleSubmit = async () => {
@@ -205,8 +220,8 @@ export function CreateEventModal({ visible, onClose, onSubmit }: Props) {
       category: current.category,
       location: {
         name: current.locationName.trim(),
-        latitude: 13.7563,
-        longitude: 100.5018,
+        latitude: current.latitude,
+        longitude: current.longitude,
       },
       description: current.description.trim(),
       startsAt: new Date(Date.now() + 86400000 * 7).toISOString(), // 1 week from now
@@ -401,6 +416,15 @@ export function CreateEventModal({ visible, onClose, onSubmit }: Props) {
                   <Text style={styles.errorText}>{errors.locationName}</Text>
                 </View>
               )}
+
+              {/* Location Picker Map */}
+              <LocationPickerMap
+                coordinate={{
+                  latitude: form.latitude,
+                  longitude: form.longitude,
+                }}
+                onCoordinateChange={handleCoordinateChange}
+              />
             </View>
 
             {/* Description */}

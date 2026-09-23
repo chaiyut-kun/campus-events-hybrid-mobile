@@ -1,4 +1,4 @@
-# Campus Events Mobile — Lab 1, Lab 2 & Lab 3
+# Campus Events Mobile — Labs 1, 2, 3, 5, 9 & 10
 
 Mobile application built with **React Native**, **Expo SDK 57**, and **Expo Router** following the **Aura Mobile** design system.
 
@@ -264,3 +264,61 @@ campus-events/
 3. **ควรเก็บรูปไว้ที่ใดเมื่อผู้ใช้ยังไม่ submit form?**
    - ควรเก็บไว้เป็น **Local Cache / Temporary URI** ในเครื่องผู้ใช้ (เช่น ไฟล์ชั่วคราวใน Cache directory ที่ได้จาก `CameraView` หรือ Image Picker)
    - ไม่ควรรีบอัปโหลดขึ้น Cloud Storage ก่อนผู้ใช้กดยืนยันการส่งฟอร์ม เพื่อป้องกันปัญหาไฟล์ขยะ (Orphaned / Abandoned files) ในกรณีที่ผู้ใช้ยกเลิกฟอร์มหรือปิดแอปทิ้ง และช่วยประหยัด Bandwidth / ค่าใช้จ่าย Storage
+
+---
+
+## 📍 Lab 10 — Location และ Maps
+
+### ฟีเจอร์ที่พัฒนาใน Lab 10
+
+1. **Location Service (`services/location.ts`):**
+   - **Just-In-Time Permissions:** ขอสิทธิ์ตำแหน่งแบบ Foreground (`requestForegroundPermissionsAsync`) เฉพาะเมื่อผู้ใช้กดปุ่ม "ใช้ตำแหน่งปัจจุบัน" ในฟอร์มสร้างกิจกรรม
+   - **Balanced Accuracy:** ใช้ `Location.Accuracy.Balanced` เพื่อความเร็ว ประหยัดแบตเตอรี่ และตอบสนองได้รวดเร็ว เหมาะสำหรับพิกัดสถานที่ในแคมปัส
+   - **Graceful Fallback:** กรณีปฏิเสธสิทธิ์หรือเกิดข้อผิดพลาด จะใช้พิกัดศูนย์กลางแคมปัส (`13.7563, 100.5018`) เป็นค่าเริ่มต้นอย่างราบรื่น
+   - **Reverse Geocoding:** แปลงพิกัดละติจูด/ลองจิจูดเป็นชื่อสถานที่และเขตชุมชนอัตโนมัติ (`reverseGeocodeLocation`)
+   - **External Directions Integration:** รองรับการเปิดแอปแผนที่ภายนอก (`openExternalDirections`) ไปยัง Apple Maps บน iOS หรือ Google Maps บน Android/Web โดยตรง
+2. **Inline Venue Map (`components/EventVenueMap.tsx`):**
+   - แผนที่ขนาดกระทัดรัด (~180dp) ฝังใน Event Detail Modal พร้อมหมุดระบุสถานที่จัดกิจกรรม
+   - ทำงานได้สมบูรณ์แม้ผู้ใช้จะไม่อนุญาต Location Permission เพราะพิกัด Venue มาจากข้อมูลกิจกรรมโดยตรง
+   - มีปุ่ม "เปิดแผนที่นำทาง" พร้อม Touch Target $\ge$ 44dp เชื่อมโยงไปยังแอปแผนที่หลักของเครื่อง
+3. **Interactive Location Picker (`components/LocationPickerMap.tsx`):**
+   - แผนที่เลือกสถานที่ใน `CreateEventModal` ที่ผู้จัดกิจกรรมสามารถแตะหน้าจอเพื่อย้ายหมุดได้อิสระ (`onPress` marker placement)
+   - ปุ่มลัด "ใช้ตำแหน่งปัจจุบัน" เพื่อดึงพิกัด GPS อัตโนมัติ พร้อมอัปเดตชื่อสถานที่ผ่าน Reverse Geocoding เข้าสู่ช่องกรอกข้อมูลในฟอร์มทันที
+   - แสดง Badges พิกัดละติจูด/ลองจิจูดแบบเรียลไทม์
+4. **All Events Map View (`components/AllEventsMapView.tsx`):**
+   - แผนที่แสดงกิจกรรมทั้งหมดพร้อมหมุดแบบ Interactive Markers และ Callouts
+   - ปรับสลับมุมมองระหว่าง รายการ (List) และ แผนที่ (Map) ผ่านปุ่มสลับมุมมองใน Header ของหน้าจอ Events
+
+### Platform & Configuration Matrix
+
+| รายการ | iOS | Android |
+| --- | --- | --- |
+| **Provider** | Apple Maps (ค่าเริ่มต้น) | Google Maps |
+| **Permissions Required** | `NSLocationWhenInUseUsageDescription` | `ACCESS_COARSE_LOCATION`, `ACCESS_FINE_LOCATION` |
+| **Expo Config Plugin** | `expo-location` พร้อมข้อความอธิบายการขอสิทธิ์ภาษาไทย | `expo-location` พร้อมข้อความอธิบายการขอสิทธิ์ภาษาไทย |
+| **Development (Expo Go)** | ไม่ต้องระบุ API key | ไม่ต้องระบุ API key |
+| **Production Build** | ทำงานได้ทันทีโดยไม่ต้องระบุ Key (หากใช้ Apple Maps) | ต้องระบุ `androidGoogleMapsApiKey` ใน `app.json` หรือ `app.config.ts` |
+| **Key Restrictions** | Bundle Identifier (หากใช้ Google Maps SDK บน iOS) | จำกัดตาม Package Name (`com.campusevents.app`) และ SHA-1 Certificate Fingerprint |
+| **Rebuild Required?** | เมื่อมีการแก้ไข Config Plugin หรือสิทธิ์ใน `app.json` | เมื่อมีการแก้ไข Config Plugin, Permissions หรือฝัง Google Maps API key ลงใน Native Binary |
+
+### Privacy Note (บันทึกความเป็นส่วนตัวของข้อมูลตำแหน่ง)
+- **การเก็บข้อมูล:** แอป Campus Events จะขอพิกัดผู้ใช้เฉพาะเมื่อผู้จัดกิจกรรมกดปุ่ม "ใช้ตำแหน่งปัจจุบัน" ในฟอร์มสร้างกิจกรรมเท่านั้น เพื่อช่วยอำนวยความสะดวกในการปักหมุดสถานที่จัดงาน
+- **ไม่มีการติดตามเบื้องหลัง:** ไม่มีการขอหรือใช้งาน Background Location ใด ๆ ทั้งสิ้น พิกัดจะถูกอ่านเพียงครั้งเดียวแบบ One-shot
+- **การแยกแยะข้อมูล:** ข้อมูลตำแหน่งปัจจุบันของผู้ใช้จะไม่ถูกส่งไปประมวลผลหรือเก็บใน Analytics ใด ๆ ทั้งสิ้น มีเพียงพิกัดของสถานที่จัดงาน (Venue Coordinates) เท่านั้นที่จะถูกบันทึกร่วมกับข้อมูลกิจกรรม
+
+---
+
+## 📝 Lab 10 — Exit Ticket
+
+1. **Accuracy สูงมีต้นทุนอะไร?**
+   - **การใช้พลังงานแบตเตอรี่ (Battery Drain):** ความแม่นยำสูง (เช่น `Accuracy.High` หรือ `Highest`) บังคับให้อุปกรณ์ต้องจ่ายไฟให้กับชิป GPS ตลอดเวลาเพื่อค้นหาและเชื่อมต่อดาวเทียมหลายดวง
+   - **เวลาหน่วง (Latency / Time to First Fix):** การรอให้สัญญาณ GPS ล็อกตำแหน่งที่แน่นอนมักใช้เวลานานหลายวินาที โดยเฉพาะอย่างยิ่งเมื่ออยู่ภายในอาคาร (Indoor) หรือจุดอับสัญญาณ
+   - **ผลกระทบด้านความร้อนและประสิทธิภาพ:** การประมวลผลสัญญาณตำแหน่งละเอียดอย่างต่อเนื่องทำให้อุปกรณ์มีความร้อนสูงขึ้นและอาจกระทบต่อ Performance โดยรวม สำหรับแอป Campus Events การเลือกใช้ `Accuracy.Balanced` ซึ่งทำงานร่วมกับ Cell Towers และ Wi-Fi จึงได้ผลลัพธ์ที่รวดเร็ว ประหยัดพลังงาน และแม่นยำเพียงพอสำหรับระดับสถานที่/อาคาร
+2. **`initialRegion` และ `region` ต่างกันอย่างไร?**
+   - **`initialRegion` (Uncontrolled):** กำหนดตำแหน่งพิกัดและระดับการซูมเริ่มต้นของแผนที่เพียงครั้งเดียวเมื่อ Mount คอมโพเนนต์ หลังจากนั้นการเลื่อน ย้าย หรือซูมแผนที่จะถูกจัดการโดย Native Map เองโดยตรง ทำให้ผู้ใช้ Pan/Zoom ได้ลื่นไหลและอิสระ ไม่เกิดการแย่ง State กับ React
+   - **`region` (Controlled):** บังคับตำแหน่งและขอบเขตของแผนที่ให้ตรงกับค่าใน React State เสมอ หาก State เปลี่ยน แผนที่จะเลื่อนตามทันที แต่หากจัดการ State ไม่รัดกุมหรือดึง State จาก Event เลื่อนจอมาอัปเดตตลอดเวลา จะทำให้เกิดอาการกระตุก (Stuttering) หรือล็อกหน้าจอจนผู้ใช้เลื่อนดูแผนที่ไม่ได้ จึงควรใช้ `initialRegion` ควบคู่กับการเรียก Imperative API เช่น `mapRef.current?.animateToRegion()` เมื่อต้องการสั่งเลื่อนแผนที่เฉพาะกิจ (เช่น เมื่อกดปุ่มค้นหาตำแหน่งปัจจุบัน)
+3. **เพราะเหตุใด Venue map จึงไม่ควรขึ้นกับ permission ของตำแหน่งผู้ใช้เสมอ?**
+   - **ความต่างของข้อมูล (Context Decoupling):** พิกัดสถานที่จัดงาน (Venue Coordinates) เป็นข้อมูลสาธารณะที่ถูกกำหนดไว้ล่วงหน้าใน Object ของกิจกรรม (`event.location.latitude/longitude`) ไม่ได้เกี่ยวข้องกับตำแหน่งที่ผู้ใช้ยืนอยู่จริงในขณะนั้น
+   - **ประสบการณ์ผู้ใช้ (User Experience & Accessibility):** ผู้ใช้งานทุกคนมีสิทธิ์ที่จะดูว่ากิจกรรมจัดขึ้นที่ใดในแคมปัส และสามารถวางแผนการเดินทางหรือกดดูเส้นทางล่วงหน้าได้ แม้ว่าผู้ใช้คนนั้นจะไม่ได้อยู่ในแคมปัส หรือเลือกไม่อนุญาต (Deny) สิทธิ์การเข้าถึงตำแหน่งส่วนตัวก็ตาม
+   - **หลักการออกแบบความเป็นส่วนตัว (Privacy by Default):** การบล็อกไม่ให้ผู้ใช้ดูแผนที่สถานที่เพียงเพราะเขาไม่ยอมแชร์ตำแหน่งส่วนบุคคล ถือเป็นการละเมิดหลัก Anti-pattern ในการพัฒนา Mobile Application ที่ดี แอปที่ดีต้องอนุญาตให้เข้าถึงเนื้อหาหลักได้แม้ไม่ได้รับสิทธิ์เสริม
+
