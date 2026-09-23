@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   StyleSheet,
   Text,
@@ -16,10 +16,13 @@ import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { EventCard } from '../../components/EventCard';
 import { BurgerMenuModal } from '../../components/BurgerMenuModal';
+import { SearchBar } from '../../components/SearchBar';
+import { EventRegistrationModal } from '../../components/EventRegistrationModal';
 import { LoadingState } from '../../components/LoadingState';
 import { ErrorState } from '../../components/ErrorState';
 import { EmptyState } from '../../components/EmptyState';
-import { mockEvents, toggleFavoriteId } from '../../data/events';
+import { mockEvents } from '../../data/events';
+import { useFavorites } from '../../context/FavoritesContext';
 import { EventListState } from '../../types/event';
 import { colors, elevation, rounded, spacing } from '../../constants/theme';
 
@@ -27,31 +30,49 @@ export default function EventsScreen() {
   const { width } = useWindowDimensions();
   const numColumns = width >= 720 ? 2 : 1;
 
+  // Shared favorites from Context
+  const { isFavorite, toggleFavorite, savedCount } = useFavorites();
+
   const [listState, setListState] = useState<EventListState>({
     status: 'ready',
     events: mockEvents,
   });
   const [refreshing, setRefreshing] = useState(false);
-  const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
   const [filter, setFilter] = useState<'all' | 'saved'>('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
+  const [registrationEventId, setRegistrationEventId] = useState<string | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  // Derived values
-  const savedCount = favoriteIds.length;
+  // Derived: current events source
   const currentEvents =
     listState.status === 'ready' ? listState.events : mockEvents;
 
-  const filteredEvents =
-    filter === 'saved'
-      ? currentEvents.filter((evt) => favoriteIds.includes(evt.id))
-      : currentEvents;
+  // Derived: filtered events (favorites tab + search query)
+  const filteredEvents = useMemo(() => {
+    let result = currentEvents;
+
+    // Filter by Favorites Tab
+    if (filter === 'saved') {
+      result = result.filter((evt) => isFavorite(evt.id));
+    }
+
+    // Filter by Search Query
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      result = result.filter(
+        (evt) =>
+          evt.title.toLowerCase().includes(q) ||
+          evt.location.name.toLowerCase().includes(q) ||
+          evt.category.toLowerCase().includes(q),
+      );
+    }
+
+    return result;
+  }, [currentEvents, filter, searchQuery, isFavorite]);
 
   const selectedEvent = currentEvents.find((evt) => evt.id === selectedEventId);
-
-  const handleToggleFavorite = (id: string) => {
-    setFavoriteIds((current) => toggleFavoriteId(current, id));
-  };
+  const registrationEvent = currentEvents.find((evt) => evt.id === registrationEventId);
 
   const handleOpenEvent = (id: string) => {
     setSelectedEventId(id);
@@ -59,6 +80,14 @@ export default function EventsScreen() {
 
   const handleCloseDetail = () => {
     setSelectedEventId(null);
+  };
+
+  const handleOpenRegistration = (id: string) => {
+    setRegistrationEventId(id);
+  };
+
+  const handleCloseRegistration = () => {
+    setRegistrationEventId(null);
   };
 
   const handleRefresh = useCallback(() => {
@@ -109,6 +138,9 @@ export default function EventsScreen() {
           </Pressable>
         </View>
       </View>
+
+      {/* Search Bar */}
+      <SearchBar value={searchQuery} onChangeText={setSearchQuery} />
 
       {/* Filter Tabs */}
       <View style={styles.filterBar}>
@@ -180,27 +212,41 @@ export default function EventsScreen() {
           renderItem={({ item }) => (
             <EventCard
               event={item}
-              isFavorite={favoriteIds.includes(item.id)}
+              isFavorite={isFavorite(item.id)}
               onOpen={handleOpenEvent}
-              onToggleFavorite={handleToggleFavorite}
+              onToggleFavorite={toggleFavorite}
               style={numColumns > 1 ? styles.gridCard : undefined}
             />
           )}
           ListEmptyComponent={
             <EmptyState
               title={
-                filter === 'saved'
-                  ? 'ยังไม่มีกิจกรรมที่บันทึกไว้'
-                  : 'ไม่พบกิจกรรมในขณะนี้'
+                searchQuery.trim()
+                  ? 'ไม่พบกิจกรรมที่ตรงกับคำค้น'
+                  : filter === 'saved'
+                    ? 'ยังไม่มีกิจกรรมที่บันทึกไว้'
+                    : 'ไม่พบกิจกรรมในขณะนี้'
               }
               description={
-                filter === 'saved'
-                  ? 'กดที่รูปดาวบนการ์ดกิจกรรมเพื่อบันทึกงานที่คุณสนใจลงในรายการโปรด'
-                  : 'โปรดลองตรวจสอบการเชื่อมต่อ หรือกลับมาดูใหม่อีกครั้ง'
+                searchQuery.trim()
+                  ? `ไม่มีกิจกรรมที่ตรงกับ "${searchQuery}" ลองเปลี่ยนคำค้นดู`
+                  : filter === 'saved'
+                    ? 'กดที่รูปดาวบนการ์ดกิจกรรมเพื่อบันทึกงานที่คุณสนใจลงในรายการโปรด'
+                    : 'โปรดลองตรวจสอบการเชื่อมต่อ หรือกลับมาดูใหม่อีกครั้ง'
               }
-              actionLabel={filter === 'saved' ? 'ดูกิจกรรมทั้งหมด' : 'รีเฟรชข้อมูล'}
+              actionLabel={
+                searchQuery.trim()
+                  ? 'ล้างคำค้นหา'
+                  : filter === 'saved'
+                    ? 'ดูกิจกรรมทั้งหมด'
+                    : 'รีเฟรชข้อมูล'
+              }
               onAction={
-                filter === 'saved' ? () => setFilter('all') : handleRefresh
+                searchQuery.trim()
+                  ? () => setSearchQuery('')
+                  : filter === 'saved'
+                    ? () => setFilter('all')
+                    : handleRefresh
               }
             />
           }
@@ -298,24 +344,24 @@ export default function EventsScreen() {
                 <Pressable
                   style={({ pressed }) => [
                     styles.modalFavoriteBtn,
-                    favoriteIds.includes(selectedEvent.id)
+                    isFavorite(selectedEvent.id)
                       ? styles.modalFavoriteBtnActive
                       : styles.modalFavoriteBtnInactive,
                     pressed && styles.pressed,
                   ]}
-                  onPress={() => handleToggleFavorite(selectedEvent.id)}
+                  onPress={() => toggleFavorite(selectedEvent.id)}
                   accessibilityRole="button"
                   hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 >
                   <Ionicons
                     name={
-                      favoriteIds.includes(selectedEvent.id)
+                      isFavorite(selectedEvent.id)
                         ? 'star'
                         : 'star-outline'
                     }
                     size={18}
                     color={
-                      favoriteIds.includes(selectedEvent.id)
+                      isFavorite(selectedEvent.id)
                         ? colors.primary
                         : colors.onSurface
                     }
@@ -323,19 +369,46 @@ export default function EventsScreen() {
                   <Text
                     style={[
                       styles.modalFavoriteBtnText,
-                      favoriteIds.includes(selectedEvent.id) &&
+                      isFavorite(selectedEvent.id) &&
                         styles.modalFavoriteBtnTextActive,
                     ]}
                   >
-                    {favoriteIds.includes(selectedEvent.id)
+                    {isFavorite(selectedEvent.id)
                       ? 'บันทึกในรายการโปรดแล้ว'
                       : 'เพิ่มลงในรายการโปรด'}
+                  </Text>
+                </Pressable>
+
+                {/* Registration Button */}
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.registerBtn,
+                    pressed && styles.pressed,
+                  ]}
+                  onPress={() => handleOpenRegistration(selectedEvent.id)}
+                  accessibilityRole="button"
+                  accessibilityLabel="ลงทะเบียนเข้าร่วมกิจกรรม"
+                  testID="register-event-btn"
+                >
+                  <Ionicons name="create-outline" size={18} color={colors.onPrimary} />
+                  <Text style={styles.registerBtnText}>
+                    ลงทะเบียนเข้าร่วมกิจกรรม
                   </Text>
                 </Pressable>
               </View>
             </ScrollView>
           </View>
         </Modal>
+      )}
+
+      {/* Event Registration Modal */}
+      {registrationEvent && (
+        <EventRegistrationModal
+          visible={Boolean(registrationEvent)}
+          eventId={registrationEvent.id}
+          eventTitle={registrationEvent.title}
+          onClose={handleCloseRegistration}
+        />
       )}
 
       {/* Floating Burger Navigation Modal */}
@@ -588,5 +661,21 @@ const styles = StyleSheet.create({
   modalFavoriteBtnTextActive: {
     color: colors.primary,
     fontWeight: '700',
+  },
+  registerBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    minHeight: 44,
+    paddingVertical: 12,
+    borderRadius: rounded.lg,
+    backgroundColor: colors.primary,
+    ...elevation.card,
+  },
+  registerBtnText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: colors.onPrimary,
   },
 });

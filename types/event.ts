@@ -21,3 +21,13 @@ export type EventListState =
   | { status: 'error'; message: string }
   | { status: 'ready'; events: CampusEvent[] };
 
+/**
+ * Discriminated union for favorite reducer actions.
+ * - hydrate: bulk-load IDs (e.g. from storage in a future lab)
+ * - toggle: add or remove a single event ID
+ * - clear: remove all favorites
+ */
+export type FavoriteAction =
+  | { type: 'hydrate'; ids: string[] }
+  | { type: 'toggle'; id: string }
+  | { type: 'clear' };
