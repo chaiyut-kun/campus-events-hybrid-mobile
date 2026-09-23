@@ -18,12 +18,13 @@ import { EventCard } from '../../components/EventCard';
 import { BurgerMenuModal } from '../../components/BurgerMenuModal';
 import { SearchBar } from '../../components/SearchBar';
 import { EventRegistrationModal } from '../../components/EventRegistrationModal';
+import { CreateEventModal } from '../../components/CreateEventModal';
 import { LoadingState } from '../../components/LoadingState';
 import { ErrorState } from '../../components/ErrorState';
 import { EmptyState } from '../../components/EmptyState';
 import { mockEvents } from '../../data/events';
 import { useFavorites } from '../../context/FavoritesContext';
-import { EventListState } from '../../types/event';
+import { CampusEvent, EventListState } from '../../types/event';
 import { colors, elevation, rounded, spacing } from '../../constants/theme';
 
 export default function EventsScreen() {
@@ -43,6 +44,7 @@ export default function EventsScreen() {
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [registrationEventId, setRegistrationEventId] = useState<string | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
 
   // Derived: current events source
   const currentEvents =
@@ -88,6 +90,13 @@ export default function EventsScreen() {
 
   const handleCloseRegistration = () => {
     setRegistrationEventId(null);
+  };
+
+  const handleCreateEvent = (newEvent: CampusEvent) => {
+    setListState((current) => {
+      const prevEvents = current.status === 'ready' ? current.events : mockEvents;
+      return { status: 'ready', events: [newEvent, ...prevEvents] };
+    });
   };
 
   const handleRefresh = useCallback(() => {
@@ -411,6 +420,24 @@ export default function EventsScreen() {
         />
       )}
 
+      {/* Floating Action Button (FAB) for Creating Event */}
+      <Pressable
+        style={({ pressed }) => [styles.fab, pressed && styles.pressed]}
+        onPress={() => setIsCreateOpen(true)}
+        accessibilityRole="button"
+        accessibilityLabel="สร้างกิจกรรมใหม่"
+        testID="create-event-fab"
+      >
+        <Ionicons name="add" size={28} color={colors.onPrimary} />
+      </Pressable>
+
+      {/* Create Event Modal */}
+      <CreateEventModal
+        visible={isCreateOpen}
+        onClose={() => setIsCreateOpen(false)}
+        onSubmit={handleCreateEvent}
+      />
+
       {/* Floating Burger Navigation Modal */}
       <BurgerMenuModal
         visible={isMenuOpen}
@@ -677,5 +704,20 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
     color: colors.onPrimary,
+  },
+  fab: {
+    position: 'absolute',
+    bottom: 24,
+    right: 20,
+    width: 56,
+    height: 56,
+    borderRadius: rounded.full,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...elevation.card,
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 6,
   },
 });
