@@ -188,4 +188,29 @@ describe('Integration Test: EventsScreen', () => {
       expect(queryByTestId('create-event-close-btn')).toBeNull();
     });
   });
+
+  it('toggles between list view and all events map view', async () => {
+    const { getByTestId, queryByTestId } = await renderEventsScreen();
+
+    // Initially in list mode
+    expect(getByTestId('search-input')).toBeTruthy();
+    expect(queryByTestId('all-events-map-view')).toBeNull();
+
+    // Toggle to map view
+    const toggleBtn = getByTestId('view-mode-toggle');
+    fireEvent.press(toggleBtn);
+
+    await waitFor(() => {
+      expect(getByTestId('all-events-map-view')).toBeTruthy();
+      expect(queryByTestId('search-input')).toBeNull();
+    });
+
+    // Toggle back to list view
+    fireEvent.press(toggleBtn);
+
+    await waitFor(() => {
+      expect(getByTestId('search-input')).toBeTruthy();
+      expect(queryByTestId('all-events-map-view')).toBeNull();
+    });
+  });
 });

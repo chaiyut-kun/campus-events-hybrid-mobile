@@ -56,3 +56,75 @@ jest.mock('expo-image-picker', () => ({
     ],
   }),
 }));
+
+// Mock expo-location
+jest.mock('expo-location', () => ({
+  Accuracy: {
+    Lowest: 1,
+    Low: 2,
+    Balanced: 3,
+    High: 4,
+    Highest: 5,
+    BestForNavigation: 6,
+  },
+  requestForegroundPermissionsAsync: jest.fn().mockResolvedValue({
+    granted: true,
+    canAskAgain: true,
+    status: 'granted',
+  }),
+  getCurrentPositionAsync: jest.fn().mockResolvedValue({
+    coords: {
+      latitude: 13.7563,
+      longitude: 100.5018,
+    },
+  }),
+  reverseGeocodeAsync: jest.fn().mockResolvedValue([
+    {
+      name: 'Innovative Learning Hub',
+      street: 'Campus Main Ave',
+      district: 'Dusit',
+      city: 'Bangkok',
+    },
+  ]),
+}));
+
+// Mock react-native-maps
+jest.mock('react-native-maps', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+
+  const MockMapView = React.forwardRef((props, ref) => {
+    React.useImperativeHandle(ref, () => ({
+      animateToRegion: jest.fn(),
+      fitToCoordinates: jest.fn(),
+    }));
+    return React.createElement(
+      View,
+      { ...props, testID: props.testID || 'mock-map-view' },
+      props.children
+    );
+  });
+
+  const MockMarker = (props) =>
+    React.createElement(
+      View,
+      { ...props, testID: props.testID || 'mock-marker' },
+      props.children
+    );
+
+  const MockCallout = (props) =>
+    React.createElement(
+      View,
+      { ...props, testID: props.testID || 'mock-callout' },
+      props.children
+    );
+
+  return {
+    __esModule: true,
+    default: MockMapView,
+    Marker: MockMarker,
+    Callout: MockCallout,
+    PROVIDER_DEFAULT: 'default',
+    PROVIDER_GOOGLE: 'google',
+  };
+});
