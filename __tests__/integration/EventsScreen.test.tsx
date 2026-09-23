@@ -167,4 +167,25 @@ describe('Integration Test: EventsScreen', () => {
 
     useWindowDimensionsSpy.mockRestore();
   });
+
+  it('renders FAB button and opens CreateEventModal when pressed', async () => {
+    const { getByTestId, getByText, queryByTestId } = await renderEventsScreen();
+
+    const fab = getByTestId('create-event-fab');
+    expect(fab).toBeTruthy();
+
+    fireEvent.press(fab);
+
+    await waitFor(() => {
+      expect(getByText('สร้างกิจกรรมใหม่')).toBeTruthy();
+      expect(getByTestId('create-event-close-btn')).toBeTruthy();
+    });
+
+    // Close the create modal
+    fireEvent.press(getByTestId('create-event-close-btn'));
+
+    await waitFor(() => {
+      expect(queryByTestId('create-event-close-btn')).toBeNull();
+    });
+  });
 });
