@@ -43,3 +43,57 @@ if (fs.existsSync(fxFile)) {
     );
   }
 }
+
+// 3. Patch TopicSubscriptionModule.android.js so missing ExpoTopicSubscriptionModule in Expo Go doesn't crash on Android
+const topicModuleFile = path.join(
+  __dirname,
+  '../node_modules/expo-notifications/build/TopicSubscriptionModule.android.js',
+);
+
+if (fs.existsSync(topicModuleFile)) {
+  let content = fs.readFileSync(topicModuleFile, 'utf8');
+  if (content.includes("requireNativeModule('ExpoTopicSubscriptionModule')")) {
+    content = `import { requireOptionalNativeModule } from 'expo-modules-core';
+const nativeModule = requireOptionalNativeModule('ExpoTopicSubscriptionModule');
+export default nativeModule || {
+  addListener: () => {},
+  removeListeners: () => {},
+  subscribeToTopicAsync: () => Promise.resolve(null),
+  unsubscribeFromTopicAsync: () => Promise.resolve(null),
+};
+`;
+    fs.writeFileSync(topicModuleFile, content, 'utf8');
+    console.log(
+      '[patch-notifications] Patched TopicSubscriptionModule.android.js for Expo Go Android.',
+    );
+  }
+}
+
+// 4. Patch PushTokenManager.native.js defensively in case ExpoPushTokenManager is missing in Expo Go
+const pushTokenManagerFile = path.join(
+  __dirname,
+  '../node_modules/expo-notifications/build/PushTokenManager.native.js',
+);
+
+if (fs.existsSync(pushTokenManagerFile)) {
+  let content = fs.readFileSync(pushTokenManagerFile, 'utf8');
+  if (content.includes("requireNativeModule('ExpoPushTokenManager')")) {
+    content = `import { requireOptionalNativeModule, Platform } from 'expo-modules-core';
+const nativeModule = requireOptionalNativeModule('ExpoPushTokenManager');
+export default nativeModule || {
+  getDevicePushTokenAsync: () => Promise.resolve(''),
+  unregisterForNotificationsAsync: () => Promise.resolve(),
+  addListener: () => ({ remove: () => {} }),
+  removeListener: () => {},
+  removeAllListeners: () => {},
+  emit: () => {},
+  listenerCount: () => 0,
+};
+`;
+    fs.writeFileSync(pushTokenManagerFile, content, 'utf8');
+    console.log(
+      '[patch-notifications] Patched PushTokenManager.native.js with safe fallback for Expo Go.',
+    );
+  }
+}
+

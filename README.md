@@ -352,8 +352,12 @@ campus-events/
    - **Foreground Banner Display:** กำหนด `setNotificationHandler` ให้แสดง Banner และส่งเสียงแม้ผู้ใช้กำลังใช้งานแอปอยู่ด้านหน้า
 
 ### 🛠️ ข้อสังเกตและการแก้ไขกรณีรันบน Android ผ่าน Expo Go (SDK 53+)
-- **สาเหตุของ Error บน Expo Go:** ใน Expo SDK 53+ ได้มีการถอดระบบ Remote Push Notifications ออกจากแอป Expo Go บน Android แต่แพ็กเกจ `expo-notifications` มีสคริปต์ Side-effect (`DevicePushTokenAutoRegistration.fx.js`) ที่ทำงานตอน Import ซึ่งจะเรียกฟังก์ชัน `warnOfExpoGoPushUsage` และ `throw new Error` ดักไว้ ส่งผลให้แอป Crash ทันทีที่บรรทัด `import * as Notifications from 'expo-notifications'`
-- **วิธีแก้ไขด้วย Auto-patch:** โปรเจกต์ได้เพิ่มสคริปต์ [`scripts/patch-notifications.js`](file:///data/cs/4/hybrid-mobile/campus-events/scripts/patch-notifications.js) และผูกคำสั่ง `"postinstall": "node scripts/patch-notifications.js"` ใน `package.json` เพื่อเปลี่ยนการ Throw Error ให้เป็น `console.warn` และข้ามการทำงานของ Remote Push Token บน Expo Go อย่างปลอดภัย ทำให้สามารถทดสอบและใช้งานระบบ **Local Event Reminder** บน Expo Go Android ได้อย่างสมบูรณ์
+- **สาเหตุของ Error บน Expo Go:** ใน Expo SDK 53+ ได้มีการถอดระบบ Firebase Cloud Messaging (FCM) และ Remote Push Notifications ออกจากแอป Expo Go บน Android ส่งผลให้เกิดปัญหา 2 ชั้นเมื่อ Import `expo-notifications`:
+  1. ไฟล์ Side-effect `DevicePushTokenAutoRegistration.fx.js` เรียก `warnOfExpoGoPushUsage` ซึ่ง `throw new Error` ขัดขวางการทำงาน
+  2. ไฟล์ `TopicSubscriptionModule.android.js` และ `PushTokenManager.native.js` เรียก `requireNativeModule` เพื่อหาโมดูล Native ของ Firebase ซึ่งไม่มีอยู่ในตัวแอป Expo Go Android จึงโยน Uncaught Error `Cannot find native module 'ExpoTopicSubscriptionModule'` และทำให้หน้า Root Layout พัง (`TypeError: Cannot read property 'ErrorBoundary' of undefined`)
+- **วิธีแก้ไขด้วย Auto-patch:** โปรเจกต์ได้จัดทำสคริปต์ [`scripts/patch-notifications.js`](file:///data/cs/4/hybrid-mobile/campus-events/scripts/patch-notifications.js) และผูกคำสั่ง `"postinstall": "node scripts/patch-notifications.js"` ใน `package.json` เพื่อ:
+  - เปลี่ยนการ Throw Fatal Error ให้เป็น `console.warn` และข้าม Push Auto-registration
+  - เปลี่ยนจากการเรียก `requireNativeModule` เป็น `requireOptionalNativeModule` พร้อม Safe Fallback Object จำลอง เพื่อให้ระบบ **Local Event Reminders** ทั้งหมดของ Lab 11 สามารถทำงานได้อย่างราบรื่น 100% บน Expo Go Android
 
 ---
 
