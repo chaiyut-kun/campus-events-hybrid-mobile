@@ -8,32 +8,40 @@ import {
   extractEventIdFromResponse,
 } from '../services/notification';
 
-// Configure foreground banner & sound
-configureNotificationHandler();
+// Configure foreground banner & sound safely
+try {
+  configureNotificationHandler();
+} catch (e) {
+  console.warn('Failed to configure foreground notification handler:', e);
+}
 
 export default function RootLayout() {
   useEffect(() => {
-    // 1. Cold start: check if app was opened via notification tap
-    const initialResponse = Notifications.getLastNotificationResponse();
-    if (initialResponse) {
-      const eventId = extractEventIdFromResponse(initialResponse);
-      if (eventId) {
-        router.push({ pathname: '/events/[id]', params: { id: eventId } });
-      }
-      Notifications.clearLastNotificationResponse();
-    }
-
-    // 2. Active / Background response: listen to notification taps
-    const subscription = Notifications.addNotificationResponseReceivedListener(
-      (response) => {
-        const eventId = extractEventIdFromResponse(response);
+    try {
+      // 1. Cold start: check if app was opened via notification tap
+      const initialResponse = Notifications.getLastNotificationResponse();
+      if (initialResponse) {
+        const eventId = extractEventIdFromResponse(initialResponse);
         if (eventId) {
           router.push({ pathname: '/events/[id]', params: { id: eventId } });
         }
-      },
-    );
+        Notifications.clearLastNotificationResponse();
+      }
 
-    return () => subscription.remove();
+      // 2. Active / Background response: listen to notification taps
+      const subscription = Notifications.addNotificationResponseReceivedListener(
+        (response) => {
+          const eventId = extractEventIdFromResponse(response);
+          if (eventId) {
+            router.push({ pathname: '/events/[id]', params: { id: eventId } });
+          }
+        },
+      );
+
+      return () => subscription?.remove?.();
+    } catch (e) {
+      console.warn('Notification listener setup failed:', e);
+    }
   }, []);
 
   return (

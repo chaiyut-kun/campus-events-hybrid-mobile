@@ -351,6 +351,10 @@ campus-events/
    - **Foreground & Background Response:** ดักจับการแตะ Notification ผ่าน `addNotificationResponseReceivedListener()`
    - **Foreground Banner Display:** กำหนด `setNotificationHandler` ให้แสดง Banner และส่งเสียงแม้ผู้ใช้กำลังใช้งานแอปอยู่ด้านหน้า
 
+### 🛠️ ข้อสังเกตและการแก้ไขกรณีรันบน Android ผ่าน Expo Go (SDK 53+)
+- **สาเหตุของ Error บน Expo Go:** ใน Expo SDK 53+ ได้มีการถอดระบบ Remote Push Notifications ออกจากแอป Expo Go บน Android แต่แพ็กเกจ `expo-notifications` มีสคริปต์ Side-effect (`DevicePushTokenAutoRegistration.fx.js`) ที่ทำงานตอน Import ซึ่งจะเรียกฟังก์ชัน `warnOfExpoGoPushUsage` และ `throw new Error` ดักไว้ ส่งผลให้แอป Crash ทันทีที่บรรทัด `import * as Notifications from 'expo-notifications'`
+- **วิธีแก้ไขด้วย Auto-patch:** โปรเจกต์ได้เพิ่มสคริปต์ [`scripts/patch-notifications.js`](file:///data/cs/4/hybrid-mobile/campus-events/scripts/patch-notifications.js) และผูกคำสั่ง `"postinstall": "node scripts/patch-notifications.js"` ใน `package.json` เพื่อเปลี่ยนการ Throw Error ให้เป็น `console.warn` และข้ามการทำงานของ Remote Push Token บน Expo Go อย่างปลอดภัย ทำให้สามารถทดสอบและใช้งานระบบ **Local Event Reminder** บน Expo Go Android ได้อย่างสมบูรณ์
+
 ---
 
 ### Notification & Deep Link Lifecycle
