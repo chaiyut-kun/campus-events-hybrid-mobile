@@ -1,4 +1,4 @@
-# Campus Events Mobile — Labs 1, 2, 3, 5, 9 & 10
+# Campus Events Mobile — Labs 1, 2, 3, 5, 9, 10 & 11
 
 Mobile application built with **React Native**, **Expo SDK 57**, and **Expo Router** following the **Aura Mobile** design system.
 
@@ -319,6 +319,112 @@ campus-events/
    - **`region` (Controlled):** บังคับตำแหน่งและขอบเขตของแผนที่ให้ตรงกับค่าใน React State เสมอ หาก State เปลี่ยน แผนที่จะเลื่อนตามทันที แต่หากจัดการ State ไม่รัดกุมหรือดึง State จาก Event เลื่อนจอมาอัปเดตตลอดเวลา จะทำให้เกิดอาการกระตุก (Stuttering) หรือล็อกหน้าจอจนผู้ใช้เลื่อนดูแผนที่ไม่ได้ จึงควรใช้ `initialRegion` ควบคู่กับการเรียก Imperative API เช่น `mapRef.current?.animateToRegion()` เมื่อต้องการสั่งเลื่อนแผนที่เฉพาะกิจ (เช่น เมื่อกดปุ่มค้นหาตำแหน่งปัจจุบัน)
 3. **เพราะเหตุใด Venue map จึงไม่ควรขึ้นกับ permission ของตำแหน่งผู้ใช้เสมอ?**
    - **ความต่างของข้อมูล (Context Decoupling):** พิกัดสถานที่จัดงาน (Venue Coordinates) เป็นข้อมูลสาธารณะที่ถูกกำหนดไว้ล่วงหน้าใน Object ของกิจกรรม (`event.location.latitude/longitude`) ไม่ได้เกี่ยวข้องกับตำแหน่งที่ผู้ใช้ยืนอยู่จริงในขณะนั้น
-   - **ประสบการณ์ผู้ใช้ (User Experience & Accessibility):** ผู้ใช้งานทุกคนมีสิทธิ์ที่จะดูว่ากิจกรรมจัดขึ้นที่ใดในแคมปัส และสามารถวางแผนการเดินทางหรือกดดูเส้นทางล่วงหน้าได้ แม้ว่าผู้ใช้คนนั้นจะไม่ได้อยู่ในแคมปัส หรือเลือกไม่อนุญาต (Deny) สิทธิ์การเข้าถึงตำแหน่งส่วนตัวก็ตาม
+   - **ประสบการณ์ผู้ใช้ (User Experience & Accessibility):** ผู้ใช้งานทุกคนมีสิทธิ์ที่จะดูว่ากิจกรรมจัดขึ้นที่ใดในแคมปัส และสามารถวางแผนการเดินทางหรือกดดูเส้นทางล่วงหน้าได้ แม้ว่าผู้ใช้คนนั้นจะไม่ได้อยู่ในแคมปัส หรือเลือกไม懇ญาต (Deny) สิทธิ์การเข้าถึงตำแหน่งส่วนตัวก็ตาม
    - **หลักการออกแบบความเป็นส่วนตัว (Privacy by Default):** การบล็อกไม่ให้ผู้ใช้ดูแผนที่สถานที่เพียงเพราะเขาไม่ยอมแชร์ตำแหน่งส่วนบุคคล ถือเป็นการละเมิดหลัก Anti-pattern ในการพัฒนา Mobile Application ที่ดี แอปที่ดีต้องอนุญาตให้เข้าถึงเนื้อหาหลักได้แม้ไม่ได้รับสิทธิ์เสริม
+
+---
+
+## 🔔 Lab 11 — Notifications และ Mobile Platform APIs
+
+### ฟีเจอร์ที่พัฒนาใน Lab 11
+
+1. **Local Notification Service (`services/notification.ts`):**
+   - **Native OS Scheduling:** ใช้ `Notifications.scheduleNotificationAsync()` ซึ่งส่งคำสั่งตรงไปยัง Native Alarm/Notification Manager ของระบบปฏิบัติการ (iOS: `UNUserNotificationCenter` / Android: `AlarmManager`) ทำให้สามารถส่งเสียง สั่น และแสดง Pop-up Banner แจ้งเตือนได้แม้ผู้ใช้จะสลับไปใช้งานแอปอื่น (Background) หรือปัดปิดแอปไปแล้ว (Quit/Terminated)
+   - **Just-In-Time Permissions:** ขอสิทธิ์การแจ้งเตือน (`POST_NOTIFICATIONS` บน Android 13+ และ Notification Alert/Sound บน iOS) เฉพาะเมื่อผู้ใช้กดปุ่มตั้งเตือนกิจกรรมครั้งแรก
+   - **Android Notification Channel:** สร้างช่องทาง `event-reminders` ชื่อ "การเตือนกิจกรรม" ที่กำหนดระดับความสำคัญเป็น `Notifications.AndroidImportance.HIGH` พร้อมรูปแบบการสั่นและเสียง เพื่อให้ระบบ Android แสดง Heads-up Banner นอกแอปได้อย่างถูกต้อง
+   - **Dual Trigger Support:**
+     - **โหมดมาตรฐาน (Production):** ตั้งเตือนล่วงหน้า 30 นาทีก่อน `event.startsAt` (`SchedulableTriggerInputTypes.DATE`) โดยมี Validation ป้องกันกรณีเวลาล่วงเลยไปแล้ว (`reminder-time-has-passed`)
+     - **โหมดทดสอบ (Demo/Video Test):** ปุ่มลัด "ทดสอบ 5 วิ" (`SchedulableTriggerInputTypes.TIME_INTERVAL`) เพื่อความสะดวกรวดเร็วในการทดสอบและบันทึกคลิปวิดีโอส่งผลงาน
+   - **Safe Payload Extraction:** ฟังก์ชัน `extractEventIdFromResponse()` สำหรับแกะและตรวจสอบความปลอดภัยของ `eventId` จาก Notification Response
+2. **Unified Events & Reminders State (`context/EventsContext.tsx`):**
+   - จัดการข้อมูลกิจกรรมและสถานะการเตือนในระดับ Global Context ที่ Root Layout
+   - บันทึกการจับคู่ `reminders: Record<string, string>` (`eventId -> notificationId`)
+   - ระบบลบกิจกรรม (`deleteEvent`): ลบกิจกรรมออกจากรายการ พร้อมทั้งค้นหาและยกเลิก Native Reminder (`cancelScheduledNotificationAsync`) ของกิจกรรมนั้นทิ้งอัตโนมัติ เพื่อไม่ให้เกิด Ghost Notification
+3. **Dynamic Route Screen (`app/events/[id].tsx`):**
+   - หน้ารายละเอียดกิจกรรมแบบเต็ม รองรับ Deep Linking `/events/[id]`
+   - แสดงภาพแบนเนอร์, หมวดหมู่, วันเวลา, คำอธิบาย, และแผนที่ `EventVenueMap` (Lab 10)
+   - ส่วนควบคุมการแจ้งเตือน (Reminder Action Card) ที่สลับสถานะระหว่าง "เตือนก่อน 30 นาที" / "ทดสอบ 5 วิ" และ "ยกเลิกการเตือน" (Active State)
+   - ปุ่ม "ลบกิจกรรม" พร้อม Native Confirmation Alert
+   - **Event Not Found State:** กรณีเปิดด้วย ID ที่ไม่มีอยู่จริงหรือถูกลบไปแล้ว จะแสดงหน้า Fallback พร้อมไอคอนเตือน ข้อความภาษาไทยที่ชัดเจน และปุ่ม "กลับสู่หน้ารายการกิจกรรม"
+4. **App Lifecycle & Cold Start Integration (`app/_layout.tsx`):**
+   - **Cold Start Handling:** ดึงข้อมูล Notification ที่เปิดแอปผ่าน `Notifications.getLastNotificationResponse()` แล้วพาผู้ใช้ตรงไปยัง `/events/[id]` จากนั้นล้างค่าด้วย `clearLastNotificationResponse()`
+   - **Foreground & Background Response:** ดักจับการแตะ Notification ผ่าน `addNotificationResponseReceivedListener()`
+   - **Foreground Banner Display:** กำหนด `setNotificationHandler` ให้แสดง Banner และส่งเสียงแม้ผู้ใช้กำลังใช้งานแอปอยู่ด้านหน้า
+
+---
+
+### Notification & Deep Link Lifecycle
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as ผู้ใช้
+    participant App as Campus Events App (/events/[id])
+    participant Context as EventsContext
+    participant OS as Native OS (AlarmManager / UNUserNotificationCenter)
+
+    User->>App: กดปุ่ม "เตือนก่อน 30 นาที" หรือ "ทดสอบ 5 วิ"
+    App->>OS: ขอสิทธิ์การแจ้งเตือน (Just-In-Time) + สร้าง Android Channel
+    OS-->>App: อนุญาต (Granted)
+    App->>OS: สั่ง Schedule Notification (Trigger Date / 5s, Channel 'event-reminders')
+    OS-->>App: คืนค่า notificationId
+    App->>Context: บันทึก reminderId คู่กับ eventId
+    Context-->>App: ปรับ UI เป็น "ตั้งเตือนแล้ว (Active)"
+
+    Note over User, OS: ผู้ใช้กดปุ่ม Home หรือปิดแอป (Background / Quit)
+
+    OS->>OS: ถึงเวลาที่กำหนด (Native Alarm ยิงเตือน)
+    OS->>User: แสดง Heads-Up Banner พร้อมเสียง/การสั่น นอกแอป
+
+    User->>OS: แตะที่ Notification Banner
+    alt กรณีแอปปิดอยู่ (Cold Start)
+        OS->>App: เปิดแอปขึ้นมาจากศูนย์ (Cold Start)
+        App->>OS: getLastNotificationResponse()
+        OS-->>App: คืนค่า payload { eventId }
+        App->>App: router.push('/events/[id]')
+    else กรณีแอปทำงานอยู่เบื้องหน้า/เบื้องหลัง
+        OS->>App: addNotificationResponseReceivedListener()
+        App->>App: router.push('/events/[id]')
+    end
+
+    alt Event ID ถูกต้องและยังมีอยู่ในระบบ
+        App->>User: แสดงหน้ารายละเอียดกิจกรรม + แผนที่ Venue + ปุ่มจัดการ
+    else Event ถูกลบไปแล้วหรือ ID ไม่ถูกต้อง
+        App->>User: แสดงหน้า Not Found State + ปุ่มกลับหน้ารายการกิจกรรม
+    end
+```
+
+---
+
+### ตารางการทดสอบ App States และ Invalid Event ID
+
+| สภาวะของแอป (App State) | การกระทำของผู้ใช้ | พฤติกรรมที่คาดหวัง | ผลการทดสอบ |
+| --- | --- | --- | --- |
+| **Foreground (แอปเปิดอยู่ด้านหน้า)** | ตั้งเตือนแล้วรอเวลาจนถึงกำหนด | แสดง Notification Banner ด้านบนหน้าจอ พร้อมเสียงเตือน ไม่ Crash | ผ่าน (Verified) |
+| **Background (สลับไปแอปอื่น)** | ตั้งเตือนแล้วกดปุ่ม Home สลับไปหน้าจอหลักของเครื่อง | ระบบปฏิบัติการแสดง Heads-Up Banner นอกแอป แตะแล้วสลับกลับเข้าแอปตรงไปยัง `/events/[id]` | ผ่าน (Verified) |
+| **Cold Start (ปิดแอปสนิท / Swipe Kill)** | ตั้งเตือนแล้วปิดแอป แตะ Notification นอกแอป | แอปบูตขึ้นมาใหม่จากศูนย์ อ่าน `getLastNotificationResponse()` แล้วพาตรงไปยัง `/events/[id]` ทันที | ผ่าน (Verified) |
+| **Deleted Event (กิจกรรมถูกลบ)** | ตั้งเตือน ลบกิจกรรม แล้วเปิดจาก Notification | หน้า `/events/[id]` ตรวจไม่พบข้อมูลใน Context แสดงหน้า "ไม่พบกิจกรรม" พร้อมปุ่มกลับสู่หน้ารายการ | ผ่าน (Verified) |
+| **Invalid Event ID (รหัสผิดพลาด)** | เปิด Deep Link ด้วย ID ที่ไม่มีในระบบ เช่น `/events/invalid-999` | แสดงหน้า Not Found State ที่เป็นระเบียบ ไม่เกิด Unhandled Exception หรือหน้าขาว | ผ่าน (Verified) |
+
+---
+
+### Privacy & Security Note (บันทึกความปลอดภัยและความเป็นส่วนตัว)
+- **Minimal Payload Principle:** ข้อมูลใน Notification Data Payload จะจัดเก็บเฉพาะ `{ eventId: string }` เท่านั้น ไม่มีการแนบข้อมูลส่วนบุคคล (PII), ชื่อ-นามสกุล, หรือข้อมูลความลับใด ๆ
+- **Client-side Verification:** ตัวแอปจะไม่อ้างอิงข้อมูลกิจกรรมจากตัว Notification โดยตรง แต่จะใช้ `eventId` ไปตรวจสอบสิทธิ์และ Query ข้อมูลล่าสุดจาก Data Repository/Context ก่อนแสดงผลเสมอ
+
+---
+
+## 📝 Lab 11 — Exit Ticket
+
+1. **Local และ Push notification ต่างกันตรงใด?**
+   - **Local Notification:** ถูกสร้าง กำหนดเวลา และยิงเตือนโดย **ระบบปฏิบัติการของอุปกรณ์เครื่องนั้นเอง (Device-driven)** เหมาะสำหรับการเตือนส่วนบุคคล เช่น นาฬิกาปลุก, การเตือนนัดหมายตามปฏิทิน หรือ Event Reminder ที่ทราบเวลาล่วงหน้าแน่นอน โดยทำงานได้แม้ไม่มีการเชื่อมต่ออินเทอร์เน็ต และไม่ต้องพึ่งพาเซิร์ฟเวอร์ภายนอก
+   - **Push Notification:** ถูกส่งมาจาก **เซิร์ฟเวอร์ภายนอกผ่าน Push Service (Server-driven)** เช่น Apple Push Notification service (APNs) หรือ Firebase Cloud Messaging (FCM) เหมาะสำหรับเหตุการณ์ที่เกิดขึ้นแบบ Real-time และไม่ได้กำหนดล่วงหน้าบนเครื่อง เช่น การแจ้งเตือนข้อความแช็ตใหม่, ข่าวด่วน, หรือการประกาศยกเลิกกิจกรรมกะทันหัน ซึ่งต้องอาศัยการเชื่อมต่อเครือข่ายอินเทอร์เน็ตเสมอ
+2. **เพราะเหตุใด payload ควรเก็บ ID แทน event object?**
+   - **ความถูกต้องของข้อมูล (Single Source of Truth & Freshness):** หากเก็บ Event Object ทั้งก้อนไว้ใน Payload ข้อมูลนั้นจะกลายเป็น Snapshot ณ วันที่สร้างการแจ้งเตือน หากภายหลังกิจกรรมมีการเปลี่ยนสถานที่ เลื่อนเวลา หรือถูกยกเลิก ข้อมูลใน Notification จะล้าสมัยและขัดแย้งกับความเป็นจริง การส่งเฉพาะ ID ทำให้แอปสามารถโหลดข้อมูลที่เป็นปัจจุบันที่สุดจาก Repository หรือ API ได้เสมอ
+   - **ความปลอดภัยและความเป็นส่วนตัว (Data Privacy & Security):** ข้อมูลใน Notification Payload อาจถูกอ่านหรือดักจับได้ง่ายบนหน้าจอล็อก (Lock Screen) หรือผ่าน System Logs การเก็บเฉพาะ ID ที่ไม่มีข้อมูลอ่อนไหวจะช่วยป้องกันการรั่วไหลของข้อมูล
+   - **ข้อจำกัดด้านขนาดของแพลตฟอร์ม (Payload Size Limits):** ระบบปฏิบัติการและ Push Gateway มีการจำกัดขนาดของ Payload อย่างเคร่งครัด (เช่น ไม่เกิน 4KB) การเก็บเฉพาะ ID จึงมีขนาดกะทัดรัดและปลอดภัยที่สุด
+3. **App lifecycle มีผลต่อ deep link handler อย่างไร?**
+   - **Cold Start (แอปไม่ได้ทำงานอยู่):** เมื่อผู้ใช้แตะ Notification ขณะที่แอปถูกปิดสนิท (Terminated/Killed) ระบบปฏิบัติการจะเปิดแอปขึ้นมาใหม่ตั้งแต่ต้น Event Listener ปกติจะยังไม่พร้อมทำงาน ตัว Handler จึงต้องตรวจสอบผ่าน `Notifications.getLastNotificationResponse()` ใน Root Component/Layout ระหว่างการเริ่มทำงานของแอป เพื่อดึง Intent เดิมมานำทางไปยังหน้าปลายทาง
+   - **Background (แอปพับอยู่เบื้องหลัง):** แอปยังคงอยู่ในหน่วยความจำแต่ไม่ได้แสดงผล เมื่อผู้ใช้แตะ Banner แอปจะถูกดึงกลับมาเป็น Foreground ระบบปฏิบัติการจะส่ง Event เข้ามาผ่าน `addNotificationResponseReceivedListener` ซึ่งแอปต้องมี Listener คอยตรวจจับและเปลี่ยนเส้นทาง (Route) โดยไม่ต้องรีสตาร์ตแอปใหม่
+   - **Foreground (แอปเปิดใช้งานอยู่):** หากผู้ใช้กำลังเปิดดูหน้าอื่นในแอปและ Notification เข้ามา แอปจะต้องควบคุมพฤติกรรมผ่าน `setNotificationHandler` ว่าจะให้แสดง Banner ทับหน้าจอเดิมหรือไม่ และเมื่อผู้ใช้แตะจะต้องจัดการไม่ให้กระทบต่อ State การทำงานที่ผู้ใช้กำลังทำอยู่ ณ ขณะนั้น (เช่น กำลังกรอกฟอร์ม)
 

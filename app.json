@@ -41,6 +41,13 @@
         {
           "locationWhenInUsePermission": "แอปพลิเคชันต้องการเข้าถึงตำแหน่งของคุณเพื่อช่วยระบุสถานที่จัดกิจกรรมและแสดงระยะทาง"
         }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#6750A4"
+        }
       ]
     ]
   }
