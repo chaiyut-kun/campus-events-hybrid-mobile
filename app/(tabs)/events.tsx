@@ -25,7 +25,9 @@ import { LoadingState } from '../../components/LoadingState';
 import { ErrorState } from '../../components/ErrorState';
 import { EmptyState } from '../../components/EmptyState';
 import { mockEvents } from '../../data/events';
+import { router } from 'expo-router';
 import { useFavorites } from '../../context/FavoritesContext';
+import { useEvents } from '../../context/EventsContext';
 import { CampusEvent, EventListState } from '../../types/event';
 import { colors, elevation, rounded, spacing } from '../../constants/theme';
 
@@ -35,6 +37,7 @@ export default function EventsScreen() {
 
   // Shared favorites from Context
   const { isFavorite, toggleFavorite, savedCount } = useFavorites();
+  const { addEvent } = useEvents();
 
   const [listState, setListState] = useState<EventListState>({
     status: 'ready',
@@ -96,6 +99,7 @@ export default function EventsScreen() {
   };
 
   const handleCreateEvent = (newEvent: CampusEvent) => {
+    addEvent(newEvent);
     setListState((current) => {
       const prevEvents = current.status === 'ready' ? current.events : mockEvents;
       return { status: 'ready', events: [newEvent, ...prevEvents] };
@@ -438,6 +442,27 @@ export default function EventsScreen() {
                     ลงทะเบียนเข้าร่วมกิจกรรม
                   </Text>
                 </Pressable>
+
+                {/* View Full Page & Reminders Button */}
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.fullDetailBtn,
+                    pressed && styles.pressed,
+                  ]}
+                  onPress={() => {
+                    const id = selectedEvent.id;
+                    handleCloseDetail();
+                    router.push({ pathname: '/events/[id]', params: { id } });
+                  }}
+                  accessibilityRole="button"
+                  accessibilityLabel="เปิดหน้าเต็มและตั้งเตือน"
+                  testID="open-full-event-btn"
+                >
+                  <Ionicons name="notifications-outline" size={18} color={colors.primary} />
+                  <Text style={styles.fullDetailBtnText}>
+                    เปิดหน้าเต็ม & ตั้งการแจ้งเตือน
+                  </Text>
+                </Pressable>
               </View>
             </ScrollView>
           </View>
@@ -738,6 +763,24 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
     color: colors.onPrimary,
+  },
+  fullDetailBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    paddingVertical: 12,
+    borderRadius: rounded.DEFAULT,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    backgroundColor: colors.surfaceContainerLowest,
+    minHeight: 44,
+    marginTop: spacing.xs,
+  },
+  fullDetailBtnText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.primary,
   },
   fab: {
     position: 'absolute',
