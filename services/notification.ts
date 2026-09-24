@@ -26,19 +26,27 @@ export function configureNotificationHandler(): void {
  */
 export async function ensureNotificationPermission(): Promise<boolean> {
   if (Platform.OS === 'android') {
-    await Notifications.setNotificationChannelAsync(REMINDER_CHANNEL, {
-      name: 'การเตือนกิจกรรม',
-      importance: Notifications.AndroidImportance.HIGH,
-      vibrationPattern: [0, 250, 250, 250],
-      sound: 'default',
-    });
+    try {
+      await Notifications.setNotificationChannelAsync(REMINDER_CHANNEL, {
+        name: 'การเตือนกิจกรรม',
+        importance: Notifications.AndroidImportance.HIGH,
+        vibrationPattern: [0, 250, 250, 250],
+      });
+    } catch (e) {
+      console.warn('Failed to configure Android notification channel:', e);
+    }
   }
 
-  const current = await Notifications.getPermissionsAsync();
-  if (current.granted) return true;
+  try {
+    const current = await Notifications.getPermissionsAsync();
+    if (current.granted) return true;
 
-  const requested = await Notifications.requestPermissionsAsync();
-  return requested.granted;
+    const requested = await Notifications.requestPermissionsAsync();
+    return Boolean(requested.granted);
+  } catch (e) {
+    console.warn('Failed to query or request notification permissions:', e);
+    return false;
+  }
 }
 
 /**

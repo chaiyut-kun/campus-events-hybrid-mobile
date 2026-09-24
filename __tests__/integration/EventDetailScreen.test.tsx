@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
-import { Alert } from 'react-native';
+import { Alert, Linking } from 'react-native';
 import EventDetailScreen from '../../app/events/[id]';
 import { EventsProvider } from '../../context/EventsContext';
 import { FavoritesProvider } from '../../context/FavoritesContext';
@@ -157,4 +157,39 @@ describe('Integration Test: EventDetailScreen', () => {
     fireEvent.press(returnBtn);
     expect(router.replace).toHaveBeenCalledWith('/events');
   });
+
+  it('shows permission denied Alert with Open Settings button when permission is rejected', async () => {
+    (Notifications.getPermissionsAsync as jest.Mock).mockResolvedValueOnce({
+      granted: false,
+      canAskAgain: false,
+    });
+    (Notifications.requestPermissionsAsync as jest.Mock).mockResolvedValueOnce({
+      granted: false,
+    });
+
+    const alertSpy = jest.spyOn(Alert, 'alert');
+    const openSettingsSpy = jest.spyOn(Linking, 'openSettings').mockResolvedValue(undefined as any);
+
+    const { getByTestId } = await renderDetailScreen();
+    fireEvent.press(getByTestId('test-reminder-5s-btn'));
+
+    await waitFor(() => {
+      expect(alertSpy).toHaveBeenCalledWith(
+        'ไม่ได้รับอนุญาต',
+        expect.stringContaining('กรุณาเปิดสิทธิ์การแจ้งเตือนในการตั้งค่า'),
+        expect.arrayContaining([
+          expect.objectContaining({ text: 'ยกเลิก' }),
+          expect.objectContaining({ text: 'เปิดการตั้งค่า' }),
+        ]),
+      );
+    });
+
+    const openSettingsAction = alertSpy.mock.calls.find(
+      (call) => call[0] === 'ไม่ได้รับอนุญาต',
+    )?.[2]?.find((btn) => btn.text === 'เปิดการตั้งค่า');
+
+    await openSettingsAction?.onPress?.();
+    expect(openSettingsSpy).toHaveBeenCalled();
+  });
 });
+

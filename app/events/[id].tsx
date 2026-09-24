@@ -7,6 +7,7 @@ import {
   Image,
   Pressable,
   Alert,
+  Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
@@ -80,10 +81,22 @@ export default function EventDetailScreen() {
           : `ระบบจะเตือนล่วงหน้า 30 นาทีก่อนเริ่มกิจกรรม (${event.title})`,
       );
     } catch (err: any) {
+      console.error('[handleSchedule error]:', err);
       if (err.message === 'notification-permission-denied') {
         Alert.alert(
           'ไม่ได้รับอนุญาต',
           'กรุณาเปิดสิทธิ์การแจ้งเตือนในการตั้งค่าของอุปกรณ์ เพื่อรับการเตือนกิจกรรม',
+          [
+            { text: 'ยกเลิก', style: 'cancel' },
+            {
+              text: 'เปิดการตั้งค่า',
+              onPress: () => {
+                Linking.openSettings().catch((e) =>
+                  console.warn('Cannot open settings:', e),
+                );
+              },
+            },
+          ],
         );
       } else if (err.message === 'reminder-time-has-passed') {
         Alert.alert(
@@ -91,7 +104,10 @@ export default function EventDetailScreen() {
           'เวลาเตือนล่วงหน้า 30 นาทีได้ผ่านไปแล้ว หรือกิจกรรมได้เริ่มต้นขึ้นแล้ว',
         );
       } else {
-        Alert.alert('เกิดข้อผิดพลาด', 'ไม่สามารถตั้งการแจ้งเตือนได้ กรุณาลองใหม่');
+        Alert.alert(
+          'เกิดข้อผิดพลาด',
+          `ไม่สามารถตั้งการแจ้งเตือนได้ (${err?.message || 'กรุณาลองใหม่อีกครั้ง'})`,
+        );
       }
     } finally {
       setIsProcessing(false);
