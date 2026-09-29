@@ -29,6 +29,7 @@ import { useFavorites } from '../../context/FavoritesContext';
 import { useEvents } from '../../context/EventsContext';
 import { CampusEvent } from '../../types/event';
 import { colors, elevation, rounded, spacing } from '../../constants/theme';
+import { OfflineBanner } from '../../components/OfflineBanner';
 
 export default function EventsScreen() {
   const { width } = useWindowDimensions();
@@ -43,6 +44,8 @@ export default function EventsScreen() {
     refreshEvents,
     fetchStatus,
     fetchError,
+    cachedAt,
+    isOffline,
   } = useEvents();
 
   const [refreshing, setRefreshing] = useState(false);
@@ -163,6 +166,11 @@ export default function EventsScreen() {
           </Pressable>
         </View>
       </View>
+
+      {/* Offline Banner */}
+      {isOffline && (
+        <OfflineBanner updatedAt={cachedAt} onRetry={handleRetry} />
+      )}
 
       {viewMode === 'map' ? (
         <AllEventsMapView

@@ -1,5 +1,18 @@
-import React, { createContext, useContext, useReducer, useCallback, useMemo } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useReducer,
+  useCallback,
+  useMemo,
+  useState,
+  useEffect,
+} from 'react';
 import { FavoriteAction } from '../types/event';
+import {
+  loadFavoriteIds,
+  saveFavoriteIds,
+  clearFavoriteIds as clearFavoriteIdsFromStorage,
+} from '../services/favorites-storage';
 
 // ── Reducer (exported for unit testing) ──────────────────────────────
 
@@ -22,15 +35,16 @@ export function favoriteReducer(state: string[], action: FavoriteAction): string
 
 // ── Context & Provider ───────────────────────────────────────────────
 
-type FavoritesContextValue = {
+export type FavoritesContextValue = {
   favorites: string[];
+  isHydrated: boolean;
   isFavorite: (id: string) => boolean;
   toggleFavorite: (id: string) => void;
   clearFavorites: () => void;
   savedCount: number;
 };
 
-const FavoritesContext = createContext<FavoritesContextValue | null>(null);
+export const FavoritesContext = createContext<FavoritesContextValue | null>(null);
 
 /**
  * Wrap this around the route tree that needs favorites.
@@ -38,6 +52,30 @@ const FavoritesContext = createContext<FavoritesContextValue | null>(null);
  */
 export function FavoritesProvider({ children }: { children: React.ReactNode }) {
   const [favorites, dispatch] = useReducer(favoriteReducer, []);
+  const [isHydrated, setIsHydrated] = useState(false);
+
+  // ── Hydrate from AsyncStorage on mount ────────────────────────────
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      const storedIds = await loadFavoriteIds();
+      if (mounted) {
+        dispatch({ type: 'hydrate', ids: storedIds });
+        setIsHydrated(true);
+      }
+    })();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  // ── Sync to AsyncStorage on change (only after hydration completes) ─
+  useEffect(() => {
+    if (isHydrated) {
+      saveFavoriteIds(favorites);
+    }
+  }, [favorites, isHydrated]);
 
   const isFavorite = useCallback(
     (id: string) => favorites.includes(id),
@@ -49,16 +87,16 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
     [],
   );
 
-  const clearFavorites = useCallback(
-    () => dispatch({ type: 'clear' }),
-    [],
-  );
+  const clearFavorites = useCallback(() => {
+    dispatch({ type: 'clear' });
+    clearFavoriteIdsFromStorage();
+  }, []);
 
   const savedCount = favorites.length;
 
   const value = useMemo<FavoritesContextValue>(
-    () => ({ favorites, isFavorite, toggleFavorite, clearFavorites, savedCount }),
-    [favorites, isFavorite, toggleFavorite, clearFavorites, savedCount],
+    () => ({ favorites, isHydrated, isFavorite, toggleFavorite, clearFavorites, savedCount }),
+    [favorites, isHydrated, isFavorite, toggleFavorite, clearFavorites, savedCount],
   );
 
   return (

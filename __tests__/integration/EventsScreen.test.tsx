@@ -2,6 +2,7 @@ import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import EventsScreen from '../../app/(tabs)/events';
 import { FavoritesProvider } from '../../context/FavoritesContext';
+import { EventsProvider } from '../../context/EventsContext';
 
 // Mock expo-router
 jest.mock('expo-router', () => ({
@@ -213,4 +214,48 @@ describe('Integration Test: EventsScreen', () => {
       expect(queryByTestId('all-events-map-view')).toBeNull();
     });
   });
+
+  it('displays OfflineBanner when operating offline with cached data', async () => {
+    const AsyncStorage = require('@react-native-async-storage/async-storage');
+    const { EVENTS_CACHE_KEY } = require('../../services/events-cache');
+    await AsyncStorage.setItem(
+      EVENTS_CACHE_KEY,
+      JSON.stringify({
+        events: [
+          {
+            id: 'evt-001',
+            title: 'Campus Hackathon 2026: AI for Good',
+            description: 'Annual hackathon',
+            startsAt: '2026-10-15T09:00:00.000Z',
+            category: 'Technology',
+            location: {
+              name: 'Innovative Learning Hub',
+              latitude: 13.7563,
+              longitude: 100.5018,
+            },
+          },
+        ],
+        updatedAt: '2026-09-29T14:30:00.000Z',
+      }),
+    );
+
+    // Mock API to fail (network error / offline)
+    const eventsApi = require('../../services/events-api');
+    jest.spyOn(eventsApi, 'getEvents').mockRejectedValueOnce(new Error('Network request failed'));
+
+    const { findByTestId, getByText } = await render(
+      <EventsProvider>
+        <FavoritesProvider>
+          <EventsScreen />
+        </FavoritesProvider>
+      </EventsProvider>,
+    );
+
+    // Offline banner should appear with time
+    const banner = await findByTestId('offline-banner');
+    expect(banner).toBeTruthy();
+    expect(getByText(/โหมดออฟไลน์/i)).toBeTruthy();
+    expect(getByText(/แสดงข้อมูลล่าสุดจากแคช/i)).toBeTruthy();
+  });
 });
+

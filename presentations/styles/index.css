@@ -1,0 +1,67 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+:root {
+  --slidev-theme-primary: #006d3e;
+}
+
+/* Global Font and Canvas */
+.slidev-layout {
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: #fbf8fc !important;
+  color: #1b1b1e;
+}
+
+.slidev-layout.p-0 {
+  padding: 0 !important;
+  height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.slidev-layout.p-0 > * {
+  flex: 1 !important;
+  height: 100% !important;
+  width: 100% !important;
+}
+
+/* Typography Utility Classes */
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  color: #1b1b1e;
+}
+
+/* Design System Level 1 Card */
+.design-card {
+  background: #ffffff;
+  border: 1px solid #e4e1e6;
+  border-radius: 1rem;
+  padding: 1rem 1.25rem;
+  box-shadow: 0 2px 8px -2px rgba(27, 27, 30, 0.04), 0 1px 4px -1px rgba(27, 27, 30, 0.02);
+}
+
+/* Design System Badges */
+.badge-completed {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.65rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: #dcfce7;
+  color: #006d3e;
+  border: 1px solid #86efac;
+}
+
+.badge-planned {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.65rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: #ede9fe;
+  color: #732ee4;
+  border: 1px solid #c4b5fd;
+}

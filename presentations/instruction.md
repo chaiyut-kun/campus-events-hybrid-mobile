@@ -6,7 +6,7 @@ each page will show how developt of apps lab by lab
 - save everything to campus-events/presentation (./)
 
 # Tools
-- (Slidev)[https://sli.dev/guide/]
+- (Slidev)[https://sli.dev/guide/] **use pnpm `pnpm create slidev`
 
 # Export type
 - web (single page)

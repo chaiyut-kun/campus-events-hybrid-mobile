@@ -11,6 +11,10 @@ import {
   registerEvent as registerEventApi,
   ApiError,
 } from '../services/events-api';
+import {
+  loadEventsCache,
+  saveEventsCache,
+} from '../services/events-cache';
 
 // ── Types ────────────────────────────────────────────────────────────
 
@@ -21,6 +25,8 @@ export type EventsContextValue = {
   reminders: Record<string, string>;
   fetchStatus: FetchStatus;
   fetchError: string | null;
+  cachedAt: string | null;
+  isOffline: boolean;
   addEvent: (event: CampusEvent) => void;
   deleteEvent: (id: string) => Promise<void>;
   getEventById: (id: string) => CampusEvent | undefined;
@@ -43,24 +49,48 @@ export function EventsProvider({ children }: { children: React.ReactNode }) {
   const [reminders, setReminders] = useState<Record<string, string>>({});
   const [fetchStatus, setFetchStatus] = useState<FetchStatus>('idle');
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const [cachedAt, setCachedAt] = useState<string | null>(null);
+  const [isOffline, setIsOffline] = useState<boolean>(false);
 
   // AbortController ref for request cancellation on unmount
   const abortRef = useRef<AbortController | null>(null);
 
-  // ── Fetch events from API ────────────────────────────────────────
+  // ── Fetch events from API (Offline-first read flow) ──────────────
   const fetchEvents = useCallback(async () => {
     // Cancel any in-flight request
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
 
-    setFetchStatus('loading');
+    // 1. Read cache first and display immediately if available
+    let hasCachedData = false;
+    try {
+      const cached = await loadEventsCache();
+      if (cached && cached.events.length > 0) {
+        setEvents(cached.events);
+        setCachedAt(cached.updatedAt);
+        hasCachedData = true;
+      }
+    } catch {
+      // Continue to API fetch even if cache read fails
+    }
+
+    if (!hasCachedData) {
+      setFetchStatus('loading');
+    }
     setFetchError(null);
 
+    // 2. Revalidate with API in background
     try {
       const apiEvents = await fetchEventsFromApi(controller.signal);
+      const now = new Date().toISOString();
       setEvents(apiEvents);
+      setCachedAt(now);
+      setIsOffline(false);
       setFetchStatus('ready');
+      setFetchError(null);
+      // Persist latest data to cache
+      await saveEventsCache(apiEvents, now);
     } catch (error: unknown) {
       // Don't treat abort as error
       if (error instanceof Error && error.name === 'AbortError') return;
@@ -70,14 +100,20 @@ export function EventsProvider({ children }: { children: React.ReactNode }) {
           ? error.message
           : error instanceof Error
             ? error.message
-            : 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ';
+            : 'เกิดข้อผิดพลาดในการโหลดข้อมูล';
 
       console.warn('[fetchEvents error]:', message);
       setFetchError(message);
-      setFetchStatus('error');
-      // Keep existing events as fallback (mock or previously fetched)
+      setIsOffline(true);
+
+      // If we already have events (from cache or initial fallback), keep them visible
+      if (hasCachedData || events.length > 0) {
+        setFetchStatus('ready');
+      } else {
+        setFetchStatus('error');
+      }
     }
-  }, []);
+  }, [events.length]);
 
   // ── Refresh events (pull-to-refresh) ─────────────────────────────
   // Keeps current events visible during refresh, only replaces on success
@@ -90,9 +126,13 @@ export function EventsProvider({ children }: { children: React.ReactNode }) {
 
     try {
       const apiEvents = await fetchEventsFromApi(controller.signal);
+      const now = new Date().toISOString();
       setEvents(apiEvents);
+      setCachedAt(now);
+      setIsOffline(false);
       setFetchStatus('ready');
       setFetchError(null);
+      await saveEventsCache(apiEvents, now);
     } catch (error: unknown) {
       if (error instanceof Error && error.name === 'AbortError') return;
 
@@ -105,6 +145,7 @@ export function EventsProvider({ children }: { children: React.ReactNode }) {
 
       console.warn('[refreshEvents error]:', message);
       setFetchError(message);
+      setIsOffline(true);
       // Stay in 'ready' so existing list remains visible
       setFetchStatus('ready');
     }
@@ -197,6 +238,8 @@ export function EventsProvider({ children }: { children: React.ReactNode }) {
       reminders,
       fetchStatus,
       fetchError,
+      cachedAt,
+      isOffline,
       addEvent,
       deleteEvent,
       getEventById,
@@ -212,6 +255,8 @@ export function EventsProvider({ children }: { children: React.ReactNode }) {
       reminders,
       fetchStatus,
       fetchError,
+      cachedAt,
+      isOffline,
       addEvent,
       deleteEvent,
       getEventById,
@@ -234,6 +279,8 @@ const defaultEventsContext: EventsContextValue = {
   reminders: {},
   fetchStatus: 'idle',
   fetchError: null,
+  cachedAt: null,
+  isOffline: false,
   addEvent: () => {},
   deleteEvent: async () => {},
   getEventById: (id: string) => mockEvents.find((evt) => evt.id === id),
@@ -251,3 +298,4 @@ export function useEvents(): EventsContextValue {
   const ctx = useContext(EventsContext);
   return ctx || defaultEventsContext;
 }
+

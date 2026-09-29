@@ -172,3 +172,44 @@ jest.mock('expo-notifications', () => ({
   },
   DEFAULT_ACTION_IDENTIFIER: 'expo.modules.notifications.actions.DEFAULT',
 }));
+
+// Mock @react-native-async-storage/async-storage
+jest.mock('@react-native-async-storage/async-storage', () =>
+  require('@react-native-async-storage/async-storage/jest/async-storage-mock')
+);
+
+beforeEach(async () => {
+  const AsyncStorage = require('@react-native-async-storage/async-storage');
+  if (AsyncStorage && typeof AsyncStorage.clear === 'function') {
+    await AsyncStorage.clear();
+  }
+});
+
+// Mock expo-secure-store
+jest.mock('expo-secure-store', () => {
+  const store = new Map();
+  return {
+    getItemAsync: jest.fn(async (key) => store.get(key) || null),
+    setItemAsync: jest.fn(async (key, value) => {
+      store.set(key, value);
+    }),
+    deleteItemAsync: jest.fn(async (key) => {
+      store.delete(key);
+    }),
+  };
+});
+
+// Mock expo-sqlite
+jest.mock('expo-sqlite', () => {
+  const mockDb = {
+    execAsync: jest.fn().mockResolvedValue(undefined),
+    runAsync: jest.fn().mockResolvedValue({ lastInsertRowId: 1, changes: 1 }),
+    getAllAsync: jest.fn().mockResolvedValue([]),
+    getFirstAsync: jest.fn().mockResolvedValue(null),
+    closeAsync: jest.fn().mockResolvedValue(undefined),
+  };
+  return {
+    openDatabaseAsync: jest.fn().mockResolvedValue(mockDb),
+  };
+});
+

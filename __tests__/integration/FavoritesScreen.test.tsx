@@ -84,4 +84,21 @@ describe('Integration Test: FavoritesScreen', () => {
       params: { id: 'evt-001' },
     });
   });
+
+  it('hydrates saved favorites from AsyncStorage on initial load', async () => {
+    const AsyncStorage = require('@react-native-async-storage/async-storage');
+    const { FAVORITES_STORAGE_KEY } = require('../../services/favorites-storage');
+    await AsyncStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify(['evt-002']));
+
+    const { getByText, findByText } = await render(
+      <Wrapper>
+        <FavoritesScreen />
+      </Wrapper>,
+    );
+
+    // Event title for evt-002 should appear once hydrated
+    const eventTitle = await findByText(/International Symposium/i);
+    expect(eventTitle).toBeTruthy();
+  });
 });
+
