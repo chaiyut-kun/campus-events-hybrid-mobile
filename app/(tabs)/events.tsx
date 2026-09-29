@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   StyleSheet,
   Text,
@@ -24,11 +24,10 @@ import { AllEventsMapView } from '../../components/AllEventsMapView';
 import { LoadingState } from '../../components/LoadingState';
 import { ErrorState } from '../../components/ErrorState';
 import { EmptyState } from '../../components/EmptyState';
-import { mockEvents } from '../../data/events';
 import { router } from 'expo-router';
 import { useFavorites } from '../../context/FavoritesContext';
 import { useEvents } from '../../context/EventsContext';
-import { CampusEvent, EventListState } from '../../types/event';
+import { CampusEvent } from '../../types/event';
 import { colors, elevation, rounded, spacing } from '../../constants/theme';
 
 export default function EventsScreen() {
@@ -37,12 +36,15 @@ export default function EventsScreen() {
 
   // Shared favorites from Context
   const { isFavorite, toggleFavorite, savedCount } = useFavorites();
-  const { addEvent } = useEvents();
+  const {
+    events: currentEvents,
+    addEvent,
+    fetchEvents,
+    refreshEvents,
+    fetchStatus,
+    fetchError,
+  } = useEvents();
 
-  const [listState, setListState] = useState<EventListState>({
-    status: 'ready',
-    events: mockEvents,
-  });
   const [refreshing, setRefreshing] = useState(false);
   const [filter, setFilter] = useState<'all' | 'saved'>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -52,9 +54,10 @@ export default function EventsScreen() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
 
-  // Derived: current events source
-  const currentEvents =
-    listState.status === 'ready' ? listState.events : mockEvents;
+  // Initial fetch from API on mount
+  useEffect(() => {
+    fetchEvents();
+  }, [fetchEvents]);
 
   // Derived: filtered events (favorites tab + search query)
   const filteredEvents = useMemo(() => {
@@ -100,27 +103,17 @@ export default function EventsScreen() {
 
   const handleCreateEvent = (newEvent: CampusEvent) => {
     addEvent(newEvent);
-    setListState((current) => {
-      const prevEvents = current.status === 'ready' ? current.events : mockEvents;
-      return { status: 'ready', events: [newEvent, ...prevEvents] };
-    });
   };
 
-  const handleRefresh = useCallback(() => {
+  const handleRefresh = useCallback(async () => {
     setRefreshing(true);
-    // Simulate network latency
-    setTimeout(() => {
-      setListState({ status: 'ready', events: mockEvents });
-      setRefreshing(false);
-    }, 600);
-  }, []);
+    await refreshEvents();
+    setRefreshing(false);
+  }, [refreshEvents]);
 
-  const handleRetry = () => {
-    setListState({ status: 'loading' });
-    setTimeout(() => {
-      setListState({ status: 'ready', events: mockEvents });
-    }, 400);
-  };
+  const handleRetry = useCallback(() => {
+    fetchEvents();
+  }, [fetchEvents]);
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
@@ -224,10 +217,13 @@ export default function EventsScreen() {
       </View>
 
       {/* Main Content Render by State */}
-      {listState.status === 'loading' ? (
+      {fetchStatus === 'loading' && currentEvents.length === 0 ? (
         <LoadingState message="กำลังโหลดรายการกิจกรรม..." />
-      ) : listState.status === 'error' ? (
-        <ErrorState message={listState.message} onRetry={handleRetry} />
+      ) : fetchStatus === 'error' && currentEvents.length === 0 ? (
+        <ErrorState
+          message={fetchError || 'เกิดข้อผิดพลาดในการโหลดข้อมูล'}
+          onRetry={handleRetry}
+        />
       ) : (
         <FlatList
           key={`events-grid-${numColumns}`}
@@ -242,7 +238,7 @@ export default function EventsScreen() {
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl
-              refreshing={refreshing}
+              refreshing={refreshing || fetchStatus === 'refreshing'}
               onRefresh={handleRefresh}
               colors={[colors.primary]}
               tintColor={colors.primary}

@@ -16,6 +16,7 @@ import { colors, rounded, spacing, elevation } from '../constants/theme';
 import { RegistrationForm, RegistrationErrors } from '../types/registration';
 import { validateRegistration } from '../utils/validateRegistration';
 import { studentProfile } from '../data/profile';
+import { useEvents } from '../context/EventsContext';
 
 type Props = {
   visible: boolean;
@@ -26,6 +27,14 @@ type Props = {
 
 type SubmitStatus = 'idle' | 'submitting' | 'success';
 
+const getInitialForm = (): RegistrationForm => ({
+  fullName: studentProfile.name,
+  email: '',
+  studentId: studentProfile.studentId,
+  faculty: studentProfile.branch,
+  notes: '',
+});
+
 /**
  * Controlled registration form modal with:
  * - Pre-filled profile data (fullName, studentId, faculty)
@@ -35,17 +44,11 @@ type SubmitStatus = 'idle' | 'submitting' | 'success';
  * - In-modal success confirmation state
  */
 export function EventRegistrationModal({ visible, eventId, eventTitle, onClose }: Props) {
-  // Pre-fill from profile data
-  const initialForm: RegistrationForm = {
-    fullName: studentProfile.name,
-    email: '',
-    studentId: studentProfile.studentId,
-    faculty: studentProfile.branch,
-    notes: '',
-  };
+  const { registerForEvent } = useEvents();
 
-  const [form, setForm] = useState<RegistrationForm>(initialForm);
+  const [form, setForm] = useState<RegistrationForm>(getInitialForm);
   const [errors, setErrors] = useState<RegistrationErrors>({});
+  const [apiError, setApiError] = useState<string | null>(null);
   const [submitStatus, setSubmitStatus] = useState<SubmitStatus>('idle');
 
   const formRef = useRef<RegistrationForm>(form);
@@ -59,21 +62,22 @@ export function EventRegistrationModal({ visible, eventId, eventTitle, onClose }
 
   const updateField = useCallback(
     (field: keyof RegistrationForm, value: string) => {
-      setForm((prev) => {
-        const next = { ...prev, [field]: value };
-        formRef.current = next;
-        return next;
-      });
+      const next = { ...formRef.current, [field]: value };
+      formRef.current = next;
+      setForm(next);
       // Clear error on this field when user types
       if (errors[field]) {
         setErrors((prev) => {
-          const next = { ...prev };
-          delete next[field];
-          return next;
+          const nextErrors = { ...prev };
+          delete nextErrors[field];
+          return nextErrors;
         });
       }
+      if (apiError) {
+        setApiError(null);
+      }
     },
-    [errors],
+    [errors, apiError],
   );
 
   const handleSubmit = useCallback(async () => {
@@ -84,29 +88,36 @@ export function EventRegistrationModal({ visible, eventId, eventTitle, onClose }
       return; // Form preserves values on validation failure
     }
 
+    setApiError(null);
     setSubmitStatus('submitting');
-    // Simulate API call (500ms)
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    setSubmitStatus('success');
-  }, []);
+    try {
+      await registerForEvent(eventId, currentForm);
+      setSubmitStatus('success');
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : 'เกิดข้อผิดพลาดในการลงทะเบียน กรุณาลองใหม่อีกครั้ง';
+      setApiError(message);
+      setSubmitStatus('idle');
+    }
+  }, [eventId, registerForEvent]);
 
   const handleClose = useCallback(() => {
     // Reset form state on close
-    setForm(initialForm);
+    setForm(getInitialForm());
     setErrors({});
+    setApiError(null);
     setSubmitStatus('idle');
     onClose();
   }, [onClose]);
 
-  // ── Success state ──────────────────────────────────────────────────
-  if (submitStatus === 'success') {
-    return (
-      <Modal
-        visible={visible}
-        animationType="slide"
-        presentationStyle="pageSheet"
-        onRequestClose={handleClose}
-      >
+  return (
+    <Modal
+      visible={visible}
+      animationType="slide"
+      presentationStyle="pageSheet"
+      onRequestClose={handleClose}
+    >
+      {submitStatus === 'success' ? (
         <View style={styles.successContainer}>
           <View style={styles.successIconCircle}>
             <Ionicons name="checkmark" size={48} color={colors.onPrimary} />
@@ -123,36 +134,25 @@ export function EventRegistrationModal({ visible, eventId, eventTitle, onClose }
             <Text style={styles.successCloseBtnText}>ปิด</Text>
           </Pressable>
         </View>
-      </Modal>
-    );
-  }
-
-  // ── Registration form ──────────────────────────────────────────────
-  return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      presentationStyle="pageSheet"
-      onRequestClose={handleClose}
-    >
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
-        <View style={styles.container}>
-          {/* Header */}
-          <View style={styles.header}>
-            <Text style={styles.headerTitle}>ลงทะเบียนเข้าร่วมกิจกรรม</Text>
-            <Pressable
-              onPress={handleClose}
-              style={({ pressed }) => [styles.closeBtn, pressed && styles.pressed]}
-              accessibilityRole="button"
-              accessibilityLabel="ปิดฟอร์มลงทะเบียน"
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              testID="registration-close-btn"
-            >
-              <Ionicons name="close" size={22} color={colors.onSurface} />
-            </Pressable>
+      ) : (
+        <KeyboardAvoidingView
+          style={styles.flex}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
+          <View style={styles.container}>
+            {/* Header */}
+            <View style={styles.header}>
+              <Text style={styles.headerTitle}>ลงทะเบียนเข้าร่วมกิจกรรม</Text>
+              <Pressable
+                onPress={handleClose}
+                style={({ pressed }) => [styles.closeBtn, pressed && styles.pressed]}
+                accessibilityRole="button"
+                accessibilityLabel="ปิดฟอร์มลงทะเบียน"
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                testID="registration-close-btn"
+              >
+                <Ionicons name="close" size={22} color={colors.onSurface} />
+              </Pressable>
           </View>
 
           {/* Event title badge */}
@@ -260,6 +260,19 @@ export function EventRegistrationModal({ visible, eventId, eventTitle, onClose }
               />
             </FormField>
 
+            {/* API Error Banner */}
+            {apiError && (
+              <View
+                style={styles.apiErrorBanner}
+                accessibilityRole="alert"
+                accessibilityLiveRegion="polite"
+                testID="api-error-banner"
+              >
+                <Ionicons name="alert-circle" size={16} color={colors.error} />
+                <Text style={styles.apiErrorText}>{apiError}</Text>
+              </View>
+            )}
+
             {/* Submit Button */}
             <Pressable
               onPress={handleSubmit}
@@ -289,6 +302,7 @@ export function EventRegistrationModal({ visible, eventId, eventTitle, onClose }
           </ScrollView>
         </View>
       </KeyboardAvoidingView>
+      )}
     </Modal>
   );
 }
@@ -416,6 +430,24 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.error,
     fontWeight: '500',
+  },
+  apiErrorBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    backgroundColor: '#FFDAD6',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: rounded.DEFAULT,
+    borderWidth: 1,
+    borderColor: colors.error,
+    marginTop: spacing.xs,
+  },
+  apiErrorText: {
+    fontSize: 13,
+    color: colors.error,
+    fontWeight: '600',
+    flex: 1,
   },
   submitBtn: {
     flexDirection: 'row',
