@@ -1,10 +1,11 @@
 import React from 'react';
 import { StyleSheet, Text, View, Pressable } from 'react-native';
-import MapView, { Marker } from 'react-native-maps';
+import MapView, { Marker, UrlTile } from 'react-native-maps';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, rounded, spacing, elevation } from '../constants/theme';
 import { CampusLocation } from '../types/event';
 import { openExternalDirections } from '../services/location';
+import { OSM_CONFIG } from '../constants/map';
 
 type Props = {
   venue: CampusLocation;
@@ -13,7 +14,7 @@ type Props = {
 
 /**
  * Embedded Venue Map for Event Detail Modal.
- * Renders an inline MapView (~200dp) with venue pin and navigation trigger.
+ * Renders an inline OpenStreetMap MapView (~200dp) with venue pin and navigation trigger.
  * Works even when user denies location permission.
  */
 export function EventVenueMap({ venue, eventTitle }: Props) {
@@ -29,6 +30,7 @@ export function EventVenueMap({ venue, eventTitle }: Props) {
       <View style={styles.mapWrapper}>
         <MapView
           style={styles.map}
+          mapType="none"
           initialRegion={{
             latitude: venue.latitude,
             longitude: venue.longitude,
@@ -37,6 +39,13 @@ export function EventVenueMap({ venue, eventTitle }: Props) {
           }}
           testID="event-venue-map"
         >
+          <UrlTile
+            urlTemplate={OSM_CONFIG.tileUrl}
+            maximumZ={OSM_CONFIG.maxZoom}
+            flipY={false}
+            zIndex={-1}
+            testID="osm-url-tile"
+          />
           <Marker
             coordinate={{
               latitude: venue.latitude,
@@ -47,6 +56,9 @@ export function EventVenueMap({ venue, eventTitle }: Props) {
             testID="venue-marker"
           />
         </MapView>
+        <View style={styles.osmAttribution} pointerEvents="none">
+          <Text style={styles.osmAttributionText}>{OSM_CONFIG.attribution}</Text>
+        </View>
       </View>
 
       {/* Navigation directions action */}
@@ -77,9 +89,23 @@ const styles = StyleSheet.create({
   mapWrapper: {
     height: 180,
     width: '100%',
+    position: 'relative',
   },
   map: {
     ...StyleSheet.absoluteFill,
+  },
+  osmAttribution: {
+    position: 'absolute',
+    bottom: 4,
+    right: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.75)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: rounded.full,
+  },
+  osmAttributionText: {
+    fontSize: 9,
+    color: colors.onSurfaceVariant,
   },
   directionsBtn: {
     flexDirection: 'row',
@@ -101,3 +127,4 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
 });
+

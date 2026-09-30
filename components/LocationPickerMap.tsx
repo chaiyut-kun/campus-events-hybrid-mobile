@@ -7,7 +7,7 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
-import MapView, { Marker } from 'react-native-maps';
+import MapView, { Marker, UrlTile } from 'react-native-maps';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, rounded, spacing, elevation } from '../constants/theme';
 import {
@@ -16,6 +16,7 @@ import {
   reverseGeocodeLocation,
   CAMPUS_CENTER_COORDS,
 } from '../services/location';
+import { OSM_CONFIG } from '../constants/map';
 
 type Props = {
   coordinate: Coordinates;
@@ -24,7 +25,7 @@ type Props = {
 
 /**
  * Interactive Location Picker Map for event creation.
- * Users can tap "Use current location" or tap directly on the map to place a pin.
+ * Users can tap "Use current location" or tap directly on the map to place a pin using OpenStreetMap.
  */
 export function LocationPickerMap({ coordinate, onCoordinateChange }: Props) {
   const [isLocating, setIsLocating] = useState(false);
@@ -93,6 +94,7 @@ export function LocationPickerMap({ coordinate, onCoordinateChange }: Props) {
       <View style={styles.mapWrapper}>
         <MapView
           style={styles.map}
+          mapType="none"
           region={{
             latitude: coordinate.latitude,
             longitude: coordinate.longitude,
@@ -102,6 +104,13 @@ export function LocationPickerMap({ coordinate, onCoordinateChange }: Props) {
           onPress={handleMapPress}
           testID="location-picker-map"
         >
+          <UrlTile
+            urlTemplate={OSM_CONFIG.tileUrl}
+            maximumZ={OSM_CONFIG.maxZoom}
+            flipY={false}
+            zIndex={-1}
+            testID="osm-url-tile"
+          />
           <Marker
             coordinate={coordinate}
             draggable
@@ -110,6 +119,9 @@ export function LocationPickerMap({ coordinate, onCoordinateChange }: Props) {
             testID="picker-marker"
           />
         </MapView>
+        <View style={styles.osmAttribution} pointerEvents="none">
+          <Text style={styles.osmAttributionText}>{OSM_CONFIG.attribution}</Text>
+        </View>
       </View>
 
       {/* Coordinate status footer */}
@@ -169,9 +181,23 @@ const styles = StyleSheet.create({
   mapWrapper: {
     height: 150,
     width: '100%',
+    position: 'relative',
   },
   map: {
     ...StyleSheet.absoluteFill,
+  },
+  osmAttribution: {
+    position: 'absolute',
+    bottom: 4,
+    right: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.75)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: rounded.full,
+  },
+  osmAttributionText: {
+    fontSize: 9,
+    color: colors.onSurfaceVariant,
   },
   footer: {
     flexDirection: 'row',
@@ -196,3 +222,4 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
 });
+

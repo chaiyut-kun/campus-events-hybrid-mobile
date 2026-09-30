@@ -119,11 +119,19 @@ jest.mock('react-native-maps', () => {
       props.children
     );
 
+  const MockUrlTile = (props) =>
+    React.createElement(
+      View,
+      { ...props, testID: props.testID || 'mock-url-tile' },
+      props.children
+    );
+
   return {
     __esModule: true,
     default: MockMapView,
     Marker: MockMarker,
     Callout: MockCallout,
+    UrlTile: MockUrlTile,
     PROVIDER_DEFAULT: 'default',
     PROVIDER_GOOGLE: 'google',
   };

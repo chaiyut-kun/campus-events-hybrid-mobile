@@ -52,23 +52,24 @@ export async function reverseGeocodeLocation(coords: Coordinates): Promise<strin
 }
 
 /**
- * Opens external navigation app (Google Maps / Apple Maps) directed to venue coordinates.
+ * Opens external navigation on OpenStreetMap directed to venue coordinates.
  */
 export async function openExternalDirections(
   coords: Coordinates,
   label: string = 'Event Venue',
 ): Promise<void> {
   const destination = `${coords.latitude},${coords.longitude}`;
-  const url =
-    Platform.OS === 'ios'
-      ? `http://maps.apple.com/?daddr=${destination}&q=${encodeURIComponent(label)}`
-      : `https://www.google.com/maps/dir/?api=1&destination=${destination}`;
+  const osmUrl = `https://www.openstreetmap.org/?mlat=${coords.latitude}&mlon=${coords.longitude}&query=${destination}#map=17/${coords.latitude}/${coords.longitude}`;
 
-  const supported = await Linking.canOpenURL(url).catch(() => false);
+  const supported = await Linking.canOpenURL(osmUrl).catch(() => false);
   if (supported) {
-    await Linking.openURL(url);
+    await Linking.openURL(osmUrl);
   } else {
-    // Fallback to web Google Maps
-    await Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${destination}`);
+    // Fallback to platform native maps if web URL cannot be opened
+    const fallbackUrl =
+      Platform.OS === 'ios'
+        ? `http://maps.apple.com/?daddr=${destination}&q=${encodeURIComponent(label)}`
+        : `https://www.google.com/maps/search/?api=1&query=${destination}`;
+    await Linking.openURL(fallbackUrl);
   }
 }
