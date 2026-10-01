@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+
 interface HighlightItem {
   bold: string
   text: string
@@ -24,6 +26,30 @@ const props = withDefaults(
     placeholderLabel: 'App Screenshot',
   }
 )
+
+// Import all webp images in ../images
+const imageModules = import.meta.glob<{ default: string }>('../images/*.webp', { eager: true })
+
+const actualImageSrc = computed(() => {
+  if (props.imageSrc) {
+    for (const [path, mod] of Object.entries(imageModules)) {
+      const filename = path.split('/').pop()
+      if (props.imageSrc.endsWith(filename || '')) {
+        return mod.default || mod
+      }
+    }
+    return props.imageSrc
+  }
+
+  // Auto-detect by labNumber (e.g. "01", "02", ...)
+  const paddedLab = props.labNumber.padStart(2, '0')
+  const expectedKey = `../images/lab-${paddedLab}.webp`
+  if (imageModules[expectedKey]) {
+    return imageModules[expectedKey].default || imageModules[expectedKey]
+  }
+
+  return ''
+})
 </script>
 
 <template>
@@ -123,12 +149,12 @@ const props = withDefaults(
 
           <!-- Phone Screen Area -->
           <div class="phone-screen-light">
-            <!-- If image provided, render image -->
+            <!-- If image provided or auto-detected, render image -->
             <img
-              v-if="props.imageSrc"
-              :src="props.imageSrc"
+              v-if="actualImageSrc"
+              :src="actualImageSrc"
               :alt="props.title"
-              class="w-full h-full object-cover"
+              class="w-full h-full object-cover object-top rounded-[20px]"
             />
             <!-- Else render elegant placeholder -->
             <div
@@ -137,7 +163,7 @@ const props = withDefaults(
             >
               <span class="text-3xl mb-1.5">{{ props.placeholderIcon }}</span>
               <span class="text-xs font-bold text-[#1b1b1e]">{{ props.placeholderLabel }}</span>
-              <span class="text-[10px] text-[#6c7b6f] mt-0.5">`presentations/images/lab-{{ props.labNumber }}.png`</span>
+              <span class="text-[10px] text-[#6c7b6f] mt-0.5">`presentations/images/lab-{{ props.labNumber }}.webp`</span>
               <span
                 class="text-[9px] font-semibold mt-2 px-2 py-0.5 rounded-full"
                 :class="props.status === 'completed' ? 'bg-[#dcfce7] text-[#006d3e]' : 'bg-[#ede9fe] text-[#732ee4]'"
@@ -155,8 +181,8 @@ const props = withDefaults(
 <style scoped>
 .phone-frame-light {
   position: relative;
-  width: 205px;
-  height: 355px;
+  width: 240px;
+  height: 400px;
   background: #18181b;
   border-radius: 32px;
   border: 6px solid #27272a;

@@ -17,6 +17,7 @@ mdc: true
 
 ---
 layout: default
+hide: true
 ---
 
 <OverviewSlide />
@@ -36,6 +37,7 @@ layout: default
     { bold: 'Modern Baseline:', text: 'ใช้ React 19, React Native 0.86 และ TypeScript ควบคุมความถูกต้อง' }
   ]"
   :tags="['Expo 57', 'TypeScript', 'Expo Go']"
+  imageSrc="./images/lab-01.webp"
   placeholderIcon="📱"
   placeholderLabel="Expo Go Setup"
 />
@@ -55,6 +57,7 @@ layout: default
     { bold: 'List Rendering:', text: 'วนลูปแสดงผลรายการกิจกรรมจาก Data Structure อย่างมีประสิทธิภาพ' }
   ]"
   :tags="['EventCard', 'useState', 'Props Contract']"
+  imageSrc="./images/lab-02.webp"
   placeholderIcon="🃏"
   placeholderLabel="Event Cards & State"
 />
@@ -74,6 +77,7 @@ layout: default
     { bold: 'Design System:', text: 'กำหนดมาตรฐานชุดสี (Color Palette) และความโค้งมนของการ์ดกิจกรรม' }
   ]"
   :tags="['StyleSheet', 'Flexbox', 'SafeAreaContext']"
+  imageSrc="./images/lab-03.webp"
   placeholderIcon="🎨"
   placeholderLabel="Responsive UI"
 />
@@ -93,12 +97,14 @@ layout: default
     { bold: '404 & Stack Integration:', text: 'ป้องกันการหลุดด้วย +not-found.tsx พร้อม Header ย้อนกลับ' }
   ]"
   :tags="['Expo Router', 'Bottom Tabs', 'Dynamic Routes']"
+  imageSrc="./images/lab-04.webp"
   placeholderIcon="🧭"
   placeholderLabel="Tabs & Detail Route"
 />
 
 ---
 layout: default
+hide: true
 ---
 
 <div class="h-full flex flex-col justify-between py-1">
@@ -188,6 +194,7 @@ layout: default
     { bold: 'Events & Registration Context:', text: 'จัดการ State การลงทะเบียนร่วมกันทั้งระบบ' }
   ]"
   :tags="['Form Validation', 'Context API', 'Modal Sheet']"
+  imageSrc="./images/lab-05.webp"
   placeholderIcon="📋"
   placeholderLabel="Registration Form"
 />
@@ -207,6 +214,7 @@ layout: default
     { bold: 'Pull to Refresh & Retry:', text: 'รองรับการรูดหน้าจอเพื่อดึงข้อมูลใหม่และปุ่มกดลองใหม่อัตโนมัติ' }
   ]"
   :tags="['REST API', 'Error Handling', 'PullToRefresh']"
+  imageSrc="./images/lab-06.webp"
   placeholderIcon="🌐"
   placeholderLabel="API Feed & States"
 />
@@ -226,6 +234,7 @@ layout: default
     { bold: 'Storage Synchronization:', text: 'ตรวจสอบความถูกต้องและอัปเดตข้อมูลอัตโนมัติเมื่อกลับมาออนไลน์' }
   ]"
   :tags="['AsyncStorage', 'Offline Cache', 'Persistence']"
+  imageSrc="./images/lab-07.webp"
   placeholderIcon="💾"
   placeholderLabel="Offline Storage"
 />
@@ -264,6 +273,7 @@ layout: default
     { bold: 'Permission Recovery UX:', text: 'มีหน้าจอรองรับกรณีผู้ใช้ปฏิเสธสิทธิ์ พร้อมปุ่มนำทางไปหน้า Settings' }
   ]"
   :tags="['expo-camera', 'expo-image-picker', 'Permissions UX']"
+  imageSrc="./images/lab-09.webp"
   placeholderIcon="📸"
   placeholderLabel="Camera & Picker"
 />
@@ -283,6 +293,7 @@ layout: default
     { bold: 'Location Picker Modal:', text: 'จิ้มเลือกพิกัดจัดงานใหม่ผ่านแผนที่แบบเรียลไทม์' }
   ]"
   :tags="['react-native-maps', 'expo-location', 'GPS Markers']"
+  imageSrc="./images/lab-10.webp"
   placeholderIcon="🗺️"
   placeholderLabel="Campus Maps & Pins"
 />
@@ -302,12 +313,14 @@ layout: default
     { bold: 'Deep Linking to Event:', text: 'แตะการแจ้งเตือนเพื่อเปิดหน้าจอ app/events/[id] ได้อย่างแม่นยำ' }
   ]"
   :tags="['expo-notifications', 'Deep Link', 'Android Channel']"
+  imageSrc="./images/lab-11.webp"
   placeholderIcon="🔔"
   placeholderLabel="Event Reminder"
 />
 
 ---
 layout: default
+hide: true
 ---
 
 <ConclusionSlide />
