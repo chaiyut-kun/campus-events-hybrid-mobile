@@ -7,7 +7,7 @@
     <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white border border-[#e4e1e6] text-[#006d3e] text-xs font-semibold mb-4 shadow-sm z-10">
       <span>📱 Mobile Application Development</span>
       <span class="text-[10px] text-[#6c7b6f]">•</span>
-      <span class="font-mono text-[#524584]">Expo SDK 57</span>
+      <span class="font-mono text-[#524584]">ด้วย Expo SDK 57</span>
     </div>
 
     <h1 class="text-5xl font-extrabold tracking-tight text-[#1b1b1e] mb-3 z-10">
@@ -16,14 +16,7 @@
 
     <p class="text-lg text-[#3d4a40] font-medium max-w-2xl mb-8 z-10">
       ความก้าวหน้าการพัฒนาแอปพลิเคชันกิจกรรมในมหาวิทยาลัย<br/>
-      <span class="text-sm text-[#6c7b6f]">Progressive Mobile Development Lab by Lab</span>
     </p>
 
-    <div class="flex items-center gap-2.5 z-10">
-      <div class="px-3 py-1.5 rounded-lg bg-white border border-[#e4e1e6] text-xs text-[#3d4a40] font-mono shadow-sm">React Native 0.86</div>
-      <div class="px-3 py-1.5 rounded-lg bg-white border border-[#e4e1e6] text-xs text-[#3d4a40] font-mono shadow-sm">TypeScript</div>
-      <div class="px-3 py-1.5 rounded-lg bg-white border border-[#e4e1e6] text-xs text-[#3d4a40] font-mono shadow-sm">Expo Router</div>
-      <div class="px-3 py-1.5 rounded-lg bg-[#dcfce7] border border-[#86efac] text-xs text-[#006d3e] font-mono font-bold shadow-sm">Labs 1–4 Completed</div>
-    </div>
   </div>
 </template>
