@@ -43,7 +43,7 @@ export function EventVenueMap({ venue, eventTitle }: Props) {
             urlTemplate={OSM_CONFIG.tileUrl}
             maximumZ={OSM_CONFIG.maxZoom}
             flipY={false}
-            zIndex={-1}
+            shouldReplaceMapContent={true}
             testID="osm-url-tile"
           />
           <Marker
@@ -53,6 +53,7 @@ export function EventVenueMap({ venue, eventTitle }: Props) {
             }}
             title={eventTitle}
             description={venue.name}
+            zIndex={10}
             testID="venue-marker"
           />
         </MapView>

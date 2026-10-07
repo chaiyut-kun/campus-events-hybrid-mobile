@@ -108,7 +108,7 @@ export function LocationPickerMap({ coordinate, onCoordinateChange }: Props) {
             urlTemplate={OSM_CONFIG.tileUrl}
             maximumZ={OSM_CONFIG.maxZoom}
             flipY={false}
-            zIndex={-1}
+            shouldReplaceMapContent={true}
             testID="osm-url-tile"
           />
           <Marker
@@ -116,6 +116,7 @@ export function LocationPickerMap({ coordinate, onCoordinateChange }: Props) {
             draggable
             onDragEnd={handleMapPress}
             title="สถานที่จัดงาน"
+            zIndex={10}
             testID="picker-marker"
           />
         </MapView>

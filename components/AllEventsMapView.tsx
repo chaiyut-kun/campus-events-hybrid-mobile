@@ -33,12 +33,13 @@ export function AllEventsMapView({ events, onSelectEvent }: Props) {
           urlTemplate={OSM_CONFIG.tileUrl}
           maximumZ={OSM_CONFIG.maxZoom}
           flipY={false}
-          zIndex={-1}
+          shouldReplaceMapContent={true}
           testID="osm-url-tile"
         />
         {events.map((event) => (
           <Marker
             key={event.id}
+            zIndex={10}
             coordinate={{
               latitude: event.location.latitude,
               longitude: event.location.longitude,
