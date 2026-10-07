@@ -137,6 +137,29 @@ jest.mock('react-native-maps', () => {
   };
 });
 
+// Mock react-native-webview
+jest.mock('react-native-webview', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+  const MockWebView = React.forwardRef((props, ref) => {
+    React.useImperativeHandle(ref, () => ({
+      injectJavaScript: jest.fn(),
+      postMessage: jest.fn(),
+      reload: jest.fn(),
+      stopLoading: jest.fn(),
+    }));
+    return React.createElement(
+      View,
+      { ...props, testID: props.testID || 'mock-webview' },
+      props.children
+    );
+  });
+  return {
+    WebView: MockWebView,
+    default: MockWebView,
+  };
+});
+
 // Mock expo-notifications
 jest.mock('expo-notifications', () => ({
   setNotificationHandler: jest.fn(),

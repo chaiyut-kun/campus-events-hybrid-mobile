@@ -7,8 +7,8 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
-import MapView, { Marker, UrlTile } from 'react-native-maps';
 import { Ionicons } from '@expo/vector-icons';
+import { LeafletMapView } from './LeafletMapView';
 import { colors, rounded, spacing, elevation } from '../constants/theme';
 import {
   Coordinates,
@@ -16,7 +16,6 @@ import {
   reverseGeocodeLocation,
   CAMPUS_CENTER_COORDS,
 } from '../services/location';
-import { OSM_CONFIG } from '../constants/map';
 
 type Props = {
   coordinate: Coordinates;
@@ -25,7 +24,8 @@ type Props = {
 
 /**
  * Interactive Location Picker Map for event creation.
- * Users can tap "Use current location" or tap directly on the map to place a pin using OpenStreetMap.
+ * Users can tap "Use current location" or tap/drag directly on the map to place a pin using Leaflet OpenStreetMap.
+ * Runs on Android Expo Go without Google Maps API key authentication failure.
  */
 export function LocationPickerMap({ coordinate, onCoordinateChange }: Props) {
   const [isLocating, setIsLocating] = useState(false);
@@ -52,14 +52,11 @@ export function LocationPickerMap({ coordinate, onCoordinateChange }: Props) {
     }
   };
 
-  const handleMapPress = (e: any) => {
-    const coords = e.nativeEvent?.coordinate;
-    if (coords?.latitude && coords?.longitude) {
-      onCoordinateChange({
-        latitude: coords.latitude,
-        longitude: coords.longitude,
-      });
-    }
+  const handleCoordsChange = (coords: Coordinates) => {
+    onCoordinateChange({
+      latitude: coords.latitude,
+      longitude: coords.longitude,
+    });
   };
 
   return (
@@ -92,37 +89,24 @@ export function LocationPickerMap({ coordinate, onCoordinateChange }: Props) {
 
       {/* Map view */}
       <View style={styles.mapWrapper}>
-        <MapView
+        <LeafletMapView
+          center={coordinate}
+          zoom={16}
+          markers={[
+            {
+              id: 'picker',
+              latitude: coordinate.latitude,
+              longitude: coordinate.longitude,
+              title: 'สถานที่จัดงาน',
+              testID: 'picker-marker',
+            },
+          ]}
+          draggableMarker={true}
+          onMapClick={handleCoordsChange}
+          onMarkerDragEnd={handleCoordsChange}
           style={styles.map}
-          mapType="none"
-          region={{
-            latitude: coordinate.latitude,
-            longitude: coordinate.longitude,
-            latitudeDelta: 0.006,
-            longitudeDelta: 0.006,
-          }}
-          onPress={handleMapPress}
           testID="location-picker-map"
-        >
-          <UrlTile
-            urlTemplate={OSM_CONFIG.tileUrl}
-            maximumZ={OSM_CONFIG.maxZoom}
-            flipY={false}
-            shouldReplaceMapContent={true}
-            testID="osm-url-tile"
-          />
-          <Marker
-            coordinate={coordinate}
-            draggable
-            onDragEnd={handleMapPress}
-            title="สถานที่จัดงาน"
-            zIndex={10}
-            testID="picker-marker"
-          />
-        </MapView>
-        <View style={styles.osmAttribution} pointerEvents="none">
-          <Text style={styles.osmAttributionText}>{OSM_CONFIG.attribution}</Text>
-        </View>
+        />
       </View>
 
       {/* Coordinate status footer */}
@@ -187,19 +171,6 @@ const styles = StyleSheet.create({
   map: {
     ...StyleSheet.absoluteFill,
   },
-  osmAttribution: {
-    position: 'absolute',
-    bottom: 4,
-    right: 6,
-    backgroundColor: 'rgba(255, 255, 255, 0.75)',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: rounded.full,
-  },
-  osmAttributionText: {
-    fontSize: 9,
-    color: colors.onSurfaceVariant,
-  },
   footer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -223,4 +194,3 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
 });
-
