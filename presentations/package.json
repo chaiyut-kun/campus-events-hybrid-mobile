@@ -8,6 +8,7 @@
     "build": "slidev build --base /presentations/ --out dist",
     "export:pdf": "slidev export --format pdf --output campus-events-progress.pdf",
     "export:pptx": "slidev export --format pptx --output campus-events-progress.pptx",
+    "export:pptx-editable": "slidev export --format pptx-editable --output ./outputs/pptx/campus-events-editable.pptx",
     "export:all": "pnpm run build && pnpm run export:pdf && pnpm run export:pptx"
   },
   "keywords": [],

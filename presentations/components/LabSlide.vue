@@ -73,13 +73,6 @@ const actualImageSrc = computed(() => {
         <span class="w-1.5 h-1.5 rounded-full bg-[#1dbf73]"></span>
         {{ props.statusLabel || 'Completed' }}
       </span>
-      <span
-        v-else
-        class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#ede9fe] text-[#732ee4] border border-[#c4b5fd]"
-      >
-        <span class="w-1.5 h-1.5 rounded-full bg-[#732ee4]"></span>
-        {{ props.statusLabel || 'Planned Roadmap' }}
-      </span>
     </div>
 
     <!-- Main Title -->
@@ -93,9 +86,8 @@ const actualImageSrc = computed(() => {
       <div class="col-span-7 flex flex-col gap-2.5">
         <!-- Objective Card -->
         <div class="bg-white rounded-xl p-3.5 border border-[#e4e1e6] shadow-[0_2px_8px_-2px_rgba(27,27,30,0.04)]">
-          <div class="text-[11px] font-bold uppercase tracking-wider text-[#006d3e] mb-1 flex items-center gap-1.5">
-            <span>🎯</span>
-            <span>Objective (วัตถุประสงค์)</span>
+          <div class="text-[11px] font-bold uppercase tracking-wider text-[#006d3e] mb-1">
+            Objective (วัตถุประสงค์)
           </div>
           <p class="text-[13px] text-[#3d4a40] leading-snug">
             {{ props.objective }}
@@ -104,10 +96,8 @@ const actualImageSrc = computed(() => {
 
         <!-- Highlights Card -->
         <div class="bg-white rounded-xl p-3.5 border border-[#e4e1e6] shadow-[0_2px_8px_-2px_rgba(27,27,30,0.04)]">
-          <div class="text-[11px] font-bold uppercase tracking-wider text-[#1b1b1e] mb-2 flex items-center gap-1.5">
-            <span v-if="props.status === 'completed'" class="text-[#006d3e]">✨</span>
-            <span v-else class="text-[#732ee4]">⚡</span>
-            <span>{{ props.status === 'completed' ? 'Key Features & Highlights' : 'Planned Capabilities' }}</span>
+          <div class="text-[11px] font-bold uppercase tracking-wider text-[#1b1b1e] mb-2">
+            {{ props.status === 'completed' ? 'Key Features & Highlights' : 'Planned Capabilities' }}
           </div>
           <ul class="text-[12px] space-y-1.5 text-[#3d4a40]">
             <li
@@ -126,18 +116,6 @@ const actualImageSrc = computed(() => {
               </span>
             </li>
           </ul>
-        </div>
-
-        <!-- Tech Tags -->
-        <div class="flex items-center gap-2 pt-0.5">
-          <span class="text-[11px] font-semibold text-[#6c7b6f] uppercase tracking-wider">Tags:</span>
-          <span
-            v-for="tag in props.tags"
-            :key="tag"
-            class="px-2 py-0.5 rounded-md text-[11px] font-medium bg-[#f0edf1] text-[#524584] border border-[#e4e1e6]"
-          >
-            {{ tag }}
-          </span>
         </div>
       </div>
 
