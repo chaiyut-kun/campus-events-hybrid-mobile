@@ -1,5 +1,5 @@
 export const OSM_CONFIG = {
-  tileUrl: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
-  attribution: 'Tiles © Esri, DeLorme, NAVTEQ',
+  tileUrl: 'https://a.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',
+  attribution: '© OpenStreetMap contributors, Tiles by HOT France',
   maxZoom: 19,
 };
