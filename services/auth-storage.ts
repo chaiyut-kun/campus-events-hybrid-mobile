@@ -4,8 +4,8 @@ import * as SecureStore from 'expo-secure-store';
  * Storage keys matching Lab 8 specifications.
  * Tokens MUST be stored in SecureStore (Keychain/Keystore), NEVER in AsyncStorage.
  */
-export const ACCESS_TOKEN_KEY = 'session/access-token';
-export const REFRESH_TOKEN_KEY = 'session/refresh-token';
+export const ACCESS_TOKEN_KEY = 'auth_access_token';
+export const REFRESH_TOKEN_KEY = 'auth_refresh_token';
 
 /**
  * Saves both access and refresh tokens to SecureStore.

@@ -219,12 +219,24 @@ beforeEach(async () => {
 // Mock expo-secure-store
 jest.mock('expo-secure-store', () => {
   const store = new Map();
+  const ensureValidKey = (key) => {
+    if (typeof key !== 'string' || !/^[\w.-]+$/.test(key)) {
+      throw new Error(
+        'Invalid key provided to SecureStore. Keys must not be empty and contain only alphanumeric characters, ".", "-", and "_".'
+      );
+    }
+  };
   return {
-    getItemAsync: jest.fn(async (key) => store.get(key) || null),
+    getItemAsync: jest.fn(async (key) => {
+      ensureValidKey(key);
+      return store.get(key) || null;
+    }),
     setItemAsync: jest.fn(async (key, value) => {
+      ensureValidKey(key);
       store.set(key, value);
     }),
     deleteItemAsync: jest.fn(async (key) => {
+      ensureValidKey(key);
       store.delete(key);
     }),
   };

@@ -51,4 +51,18 @@ describe('Unit Test: authStorage', () => {
     const accessToken = await getAccessToken();
     expect(accessToken).toBeNull();
   });
+
+  it('uses SecureStore keys complying with Expo regex ^[\\w.-]+$', () => {
+    const validKeyRegex = /^[\w.-]+$/;
+    expect(ACCESS_TOKEN_KEY).toMatch(validKeyRegex);
+    expect(REFRESH_TOKEN_KEY).toMatch(validKeyRegex);
+    expect(ACCESS_TOKEN_KEY).not.toContain('/');
+    expect(REFRESH_TOKEN_KEY).not.toContain('/');
+  });
+
+  it('throws an error if an invalid key with slash is supplied to SecureStore', async () => {
+    await expect(SecureStore.setItemAsync('invalid/key', 'val')).rejects.toThrow(
+      'Invalid key provided to SecureStore. Keys must not be empty and contain only alphanumeric characters, ".", "-", and "_".',
+    );
+  });
 });
