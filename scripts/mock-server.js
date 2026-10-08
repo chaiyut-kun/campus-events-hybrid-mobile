@@ -171,6 +171,13 @@ function extractBearerToken(req) {
   return authHeader.substring(7).trim();
 }
 
+function extractUserIdFromToken(token) {
+  if (!token) return null;
+  const match = token.match(/mock-(?:access|refresh)-(usr-[^-]+)/);
+  if (match) return match[1];
+  return null;
+}
+
 const server = http.createServer(async (req, res) => {
   const parsedUrl = url.parse(req.url, true);
   const pathname = parsedUrl.pathname;
@@ -252,9 +259,8 @@ const server = http.createServer(async (req, res) => {
       }
 
       // Extract user id from token (mock format: mock-access-<userId>-<timestamp>)
-      const parts = token.split('-');
-      const userId = parts[2] ? `usr-${parts[2]}` : null;
-      const user = db.users.find((u) => u.id === userId) || db.users[0];
+      const userId = extractUserIdFromToken(token);
+      const user = db.users.find((u) => u.id === userId);
 
       if (!user) {
         return sendJson(res, 401, {
@@ -279,8 +285,7 @@ const server = http.createServer(async (req, res) => {
         });
       }
 
-      const parts = refreshToken.split('-');
-      const userId = parts[2] ? `usr-${parts[2]}` : 'usr-001';
+      const userId = extractUserIdFromToken(refreshToken) || 'usr-001';
 
       const newAccessToken = `mock-access-${userId}-${Date.now()}`;
       const newRefreshToken = `mock-refresh-${userId}-${Date.now()}`;
@@ -337,12 +342,33 @@ const server = http.createServer(async (req, res) => {
       return sendJson(res, 200, event);
     }
 
-    // POST /events
+    // POST /events (Only organizer role allowed)
     if (pathname === '/events' && method === 'POST') {
+      const token = extractBearerToken(req);
+      if (!token || token.startsWith('expired-')) {
+        return sendJson(res, 401, {
+          message: 'กรุณาเข้าสู่ระบบก่อนสร้างกิจกรรม',
+          code: 'UNAUTHORIZED',
+        });
+      }
+
+      const userId = extractUserIdFromToken(token);
+      const user = db.users.find((u) => u.id === userId);
+
+      if (!user || user.role !== 'organizer') {
+        return sendJson(res, 403, {
+          message: 'เฉพาะผู้จัดงาน (Organizer) เท่านั้นที่สามารถสร้างกิจกรรมได้',
+          code: 'FORBIDDEN',
+        });
+      }
+
       const body = await parseRequestBody(req);
       const newEvent = {
         id: `evt-${Date.now()}`,
         ...body,
+        organizerId: user.id,
+        organizerName: user.name,
+        createdAt: new Date().toISOString(),
       };
 
       db.events.unshift(newEvent);

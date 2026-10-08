@@ -1,8 +1,10 @@
 import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import { Alert } from 'react-native';
 import EventsScreen from '../../app/(tabs)/events';
 import { FavoritesProvider } from '../../context/FavoritesContext';
 import { EventsProvider } from '../../context/EventsContext';
+import { AuthContext, AuthContextValue } from '../../context/AuthContext';
 
 // Mock expo-router
 jest.mock('expo-router', () => ({
@@ -12,11 +14,33 @@ jest.mock('expo-router', () => ({
   usePathname: jest.fn(() => '/events'),
 }));
 
-function renderEventsScreen() {
+const defaultOrganizerAuth: AuthContextValue = {
+  session: {
+    status: 'authenticated',
+    accessToken: 'mock-organizer-token',
+    refreshToken: 'mock-organizer-refresh',
+    user: {
+      id: 'usr-002',
+      email: 'organizer@campus.ac.th',
+      studentId: '64070099',
+      name: 'วิภาดา รักเรียน',
+      faculty: 'สโมสรนักศึกษา',
+      role: 'organizer',
+    },
+  },
+  login: jest.fn(),
+  logout: jest.fn(),
+  refreshSession: jest.fn(),
+};
+
+function renderEventsScreen(customAuth?: Partial<AuthContextValue>) {
+  const authValue = { ...defaultOrganizerAuth, ...customAuth };
   return render(
-    <FavoritesProvider>
-      <EventsScreen />
-    </FavoritesProvider>
+    <AuthContext.Provider value={authValue}>
+      <FavoritesProvider>
+        <EventsScreen />
+      </FavoritesProvider>
+    </AuthContext.Provider>,
   );
 }
 
@@ -188,6 +212,41 @@ describe('Integration Test: EventsScreen', () => {
     await waitFor(() => {
       expect(queryByTestId('create-event-close-btn')).toBeNull();
     });
+  });
+
+  it('shows permission alert when non-organizer student presses FAB', async () => {
+    const alertSpy = jest.spyOn(Alert, 'alert');
+
+    const studentAuth: AuthContextValue = {
+      ...defaultOrganizerAuth,
+      session: {
+        status: 'authenticated',
+        accessToken: 'mock-student-token',
+        refreshToken: 'mock-student-refresh',
+        user: {
+          id: 'usr-001',
+          email: 'student@campus.ac.th',
+          studentId: '65070001',
+          name: 'สมชาย ใจดี',
+          faculty: 'คณะเทคโนโลยีสารสนเทศ',
+          role: 'student',
+        },
+      },
+    };
+
+    const { getByTestId, queryByText } = await renderEventsScreen(studentAuth);
+
+    const fab = getByTestId('create-event-fab');
+    fireEvent.press(fab);
+
+    expect(alertSpy).toHaveBeenCalledWith(
+      'ไม่มีสิทธิ์เข้าถึง',
+      expect.stringContaining('เฉพาะผู้จัดงาน (Organizer)'),
+      expect.any(Array),
+    );
+    expect(queryByText('สร้างกิจกรรมใหม่')).toBeNull();
+
+    alertSpy.mockRestore();
   });
 
   it('toggles between list view and all events map view', async () => {

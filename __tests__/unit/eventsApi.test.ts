@@ -5,6 +5,7 @@ import {
   getEvents,
   getEventById,
   registerEvent,
+  createEvent,
   ApiError,
   getApiUrl,
 } from '../../services/events-api';
@@ -231,6 +232,71 @@ describe('Unit Test: events-api service', () => {
 
       await expect(registerEvent('evt-001', validRegistration)).rejects.toThrow(
         /ลงทะเบียนไม่สำเร็จ \(500\)/,
+      );
+    });
+  });
+
+  describe('POST /events — createEvent (Organizer RBAC)', () => {
+    const newEventPayload = {
+      title: 'Robotics Workshop 2026',
+      description: 'Hands-on embedded robotics session.',
+      startsAt: '2026-10-20T10:00:00Z',
+      category: 'Technology' as const,
+      location: {
+        name: 'Engineering Building 3',
+        latitude: 13.7563,
+        longitude: 100.5018,
+      },
+    };
+
+    it('successfully creates an event with Bearer token for organizer', async () => {
+      const serverCreatedEvent = {
+        id: 'evt-999',
+        ...newEventPayload,
+        organizerId: 'usr-002',
+      };
+
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        status: 201,
+        json: async () => serverCreatedEvent,
+      } as Response);
+
+      const res = await createEvent(newEventPayload, 'organizer-token-xyz');
+      expect(res.id).toBe('evt-999');
+      expect(res.title).toBe('Robotics Workshop 2026');
+      expect(global.fetch).toHaveBeenCalledWith(
+        `${mockApiUrl}/events`,
+        expect.objectContaining({
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: 'Bearer organizer-token-xyz',
+          },
+          body: JSON.stringify(newEventPayload),
+        }),
+      );
+    });
+
+    it('throws 401 when token is missing or expired', async () => {
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: false,
+        status: 401,
+      } as Response);
+
+      await expect(createEvent(newEventPayload)).rejects.toThrow(
+        'กรุณาเข้าสู่ระบบก่อนสร้างกิจกรรม',
+      );
+    });
+
+    it('throws 403 Forbidden when user is not an organizer (e.g. student)', async () => {
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: false,
+        status: 403,
+      } as Response);
+
+      await expect(createEvent(newEventPayload, 'student-token')).rejects.toThrow(
+        'เฉพาะผู้จัดงาน (Organizer) เท่านั้นที่สามารถสร้างกิจกรรมได้',
       );
     });
   });

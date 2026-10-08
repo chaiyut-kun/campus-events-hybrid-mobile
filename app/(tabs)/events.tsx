@@ -10,6 +10,7 @@ import {
   Image,
   RefreshControl,
   useWindowDimensions,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -27,6 +28,8 @@ import { EmptyState } from '../../components/EmptyState';
 import { router } from 'expo-router';
 import { useFavorites } from '../../context/FavoritesContext';
 import { useEvents } from '../../context/EventsContext';
+import { useAuth } from '../../context/AuthContext';
+import { createEvent as createEventApi } from '../../services/events-api';
 import { CampusEvent } from '../../types/event';
 import { colors, elevation, rounded, spacing } from '../../constants/theme';
 import { OfflineBanner } from '../../components/OfflineBanner';
@@ -37,6 +40,7 @@ export default function EventsScreen() {
 
   // Shared favorites from Context
   const { isFavorite, toggleFavorite, savedCount } = useFavorites();
+  const { session } = useAuth();
   const {
     events: currentEvents,
     addEvent,
@@ -104,7 +108,42 @@ export default function EventsScreen() {
     setRegistrationEventId(null);
   };
 
-  const handleCreateEvent = (newEvent: CampusEvent) => {
+  const handlePressCreateFab = () => {
+    if (session.status !== 'authenticated') {
+      Alert.alert(
+        'ต้องเข้าสู่ระบบก่อน',
+        'เฉพาะผู้จัดงาน (Organizer) เท่านั้นที่สามารถสร้างกิจกรรมได้ กรุณาเข้าสู่ระบบด้วยบัญชีผู้จัดงาน',
+        [
+          { text: 'ยกเลิก', style: 'cancel' },
+          { text: 'เข้าสู่ระบบ', onPress: () => router.push('/login') },
+        ],
+      );
+      return;
+    }
+
+    if (session.user.role !== 'organizer') {
+      Alert.alert(
+        'ไม่มีสิทธิ์เข้าถึง',
+        'บัญชีนักศึกษาไม่มีสิทธิ์สร้างกิจกรรม เฉพาะผู้จัดงาน (Organizer) เท่านั้นที่สามารถสร้างกิจกรรมใหม่ได้',
+        [{ text: 'เข้าใจแล้ว', style: 'default' }],
+      );
+      return;
+    }
+
+    setIsCreateOpen(true);
+  };
+
+  const handleCreateEvent = async (newEvent: CampusEvent) => {
+    try {
+      if (session.status === 'authenticated' && session.accessToken) {
+        const { id, ...eventData } = newEvent;
+        const serverEvent = await createEventApi(eventData, session.accessToken);
+        addEvent(serverEvent);
+        return;
+      }
+    } catch (err: any) {
+      console.warn('[createEventApi error]:', err?.message);
+    }
     addEvent(newEvent);
   };
 
@@ -486,7 +525,7 @@ export default function EventsScreen() {
       {/* Floating Action Button (FAB) for Creating Event */}
       <Pressable
         style={({ pressed }) => [styles.fab, pressed && styles.pressed]}
-        onPress={() => setIsCreateOpen(true)}
+        onPress={handlePressCreateFab}
         accessibilityRole="button"
         accessibilityLabel="สร้างกิจกรรมใหม่"
         testID="create-event-fab"

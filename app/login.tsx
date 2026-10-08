@@ -32,6 +32,12 @@ export default function LoginScreen() {
     setErrorMessage(null);
   };
 
+  const handleFillOrganizerDemo = () => {
+    setEmail('organizer@campus.ac.th');
+    setPassword('password123');
+    setErrorMessage(null);
+  };
+
   const handleLogin = async () => {
     if (!email.trim() || !password) {
       setErrorMessage('กรุณากรอกอีเมล/รหัสนักศึกษา และรหัสผ่าน');
@@ -166,17 +172,36 @@ export default function LoginScreen() {
               </View>
             </View>
 
-            {/* Quick Demo Fill Button */}
-            <Pressable
-              onPress={handleFillDemo}
-              style={({ pressed }) => [styles.demoBtn, pressed && styles.pressed]}
-              accessibilityRole="button"
-              accessibilityLabel="กรอกบัญชีทดสอบอัตโนมัติ"
-              testID="demo-account-btn"
-            >
-              <Ionicons name="flash" size={16} color={colors.primary} />
-              <Text style={styles.demoBtnText}>⚡ กรอกบัญชีนักศึกษาทดสอบ</Text>
-            </Pressable>
+            {/* Quick Demo Fill Buttons */}
+            <View style={styles.demoButtonsRow}>
+              <Pressable
+                onPress={handleFillDemo}
+                style={({ pressed }) => [styles.demoBtn, pressed && styles.pressed]}
+                accessibilityRole="button"
+                accessibilityLabel="กรอกบัญชีนักศึกษาทดสอบ"
+                testID="demo-account-btn"
+              >
+                <Ionicons name="school-outline" size={15} color={colors.primary} />
+                <Text style={styles.demoBtnText}>⚡ นศ. (Student)</Text>
+              </Pressable>
+
+              <Pressable
+                onPress={handleFillOrganizerDemo}
+                style={({ pressed }) => [
+                  styles.demoBtn,
+                  styles.demoOrganizerBtn,
+                  pressed && styles.pressed,
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel="กรอกบัญชีผู้จัดงานทดสอบ"
+                testID="demo-organizer-btn"
+              >
+                <Ionicons name="business-outline" size={15} color="#B8860B" />
+                <Text style={[styles.demoBtnText, styles.demoOrganizerBtnText]}>
+                  🏢 ผู้จัด (Organizer)
+                </Text>
+              </Pressable>
+            </View>
 
             {/* Submit Button */}
             <Pressable
@@ -315,7 +340,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.onSurface,
   },
+  demoButtonsRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: spacing.md,
+  },
   demoBtn: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -323,14 +354,20 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     backgroundColor: '#EAF6EF',
     borderRadius: rounded.md,
-    marginBottom: spacing.md,
     borderWidth: 1,
     borderColor: '#C3E8D3',
   },
+  demoOrganizerBtn: {
+    backgroundColor: '#FEF9E7',
+    borderColor: '#F9E79F',
+  },
   demoBtnText: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '700',
     color: colors.primary,
+  },
+  demoOrganizerBtnText: {
+    color: '#B7950B',
   },
   submitBtn: {
     flexDirection: 'row',

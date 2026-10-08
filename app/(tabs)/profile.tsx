@@ -93,7 +93,11 @@ export default function ProfileScreen() {
         <View style={styles.heroBackground}>
           <View style={styles.activeStudentBadge}>
             <View style={styles.activeDot} />
-            <Text style={styles.activeBadgeText}>Active Student</Text>
+            <Text style={styles.activeBadgeText}>
+              {session.status === 'authenticated' && session.user.role === 'organizer'
+                ? 'Campus Organizer'
+                : 'Active Student'}
+            </Text>
           </View>
         </View>
 

@@ -44,6 +44,7 @@ describe('Integration Test: LoginScreen', () => {
     expect(getByTestId('login-email-input')).toBeTruthy();
     expect(getByTestId('login-password-input')).toBeTruthy();
     expect(getByTestId('demo-account-btn')).toBeTruthy();
+    expect(getByTestId('demo-organizer-btn')).toBeTruthy();
     expect(getByTestId('login-submit-btn')).toBeTruthy();
   });
 
@@ -55,6 +56,18 @@ describe('Integration Test: LoginScreen', () => {
 
     await waitFor(() => {
       expect(getByTestId('login-email-input').props.value).toBe('student@campus.ac.th');
+      expect(getByTestId('login-password-input').props.value).toBe('password123');
+    });
+  });
+
+  it('auto-fills demo organizer credentials when organizer button is pressed', async () => {
+    const { getByTestId } = await renderLogin();
+
+    const demoOrganizerBtn = getByTestId('demo-organizer-btn');
+    fireEvent.press(demoOrganizerBtn);
+
+    await waitFor(() => {
+      expect(getByTestId('login-email-input').props.value).toBe('organizer@campus.ac.th');
       expect(getByTestId('login-password-input').props.value).toBe('password123');
     });
   });

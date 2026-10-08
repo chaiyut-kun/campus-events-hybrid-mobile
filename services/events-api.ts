@@ -195,3 +195,44 @@ export async function registerEvent(
   const payload = await response.json();
   return payload as RegistrationResponse;
 }
+
+/**
+ * POST /events — Create a new campus event (Organizer role only).
+ * Supports AbortSignal for request cancellation.
+ */
+export async function createEvent(
+  eventData: Omit<CampusEvent, 'id'>,
+  token?: string,
+  signal?: AbortSignal,
+): Promise<CampusEvent> {
+  const baseUrl = getApiUrl();
+
+  const response = await fetch(`${baseUrl}/events`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(eventData),
+    signal,
+  });
+
+  if (!response.ok) {
+    if (response.status === 401) {
+      throw new ApiError('กรุณาเข้าสู่ระบบก่อนสร้างกิจกรรม', 401);
+    }
+    if (response.status === 403) {
+      throw new ApiError(
+        'เฉพาะผู้จัดงาน (Organizer) เท่านั้นที่สามารถสร้างกิจกรรมได้',
+        403,
+      );
+    }
+    throw new ApiError(
+      `สร้างกิจกรรมไม่สำเร็จ (${response.status})`,
+      response.status,
+    );
+  }
+
+  const payload = await response.json();
+  return parseEvent(payload);
+}
