@@ -244,3 +244,29 @@ jest.mock('expo-sqlite', () => {
   };
 });
 
+// Mock expo-router
+jest.mock('expo-router', () => {
+  const React = require('react');
+  const { Text } = require('react-native');
+  return {
+    router: {
+      push: jest.fn(),
+      replace: jest.fn(),
+      back: jest.fn(),
+      canGoBack: jest.fn(() => true),
+      setParams: jest.fn(),
+    },
+    useRouter: () => ({
+      push: jest.fn(),
+      replace: jest.fn(),
+      back: jest.fn(),
+      canGoBack: jest.fn(() => true),
+      setParams: jest.fn(),
+    }),
+    useLocalSearchParams: jest.fn(() => ({})),
+    usePathname: jest.fn(() => '/'),
+    Link: (props) => React.createElement(Text, props, props.children),
+  };
+});
+
+

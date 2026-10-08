@@ -154,7 +154,15 @@ export function EventsProvider({ children }: { children: React.ReactNode }) {
   // ── Register for event via POST API ──────────────────────────────
   const registerForEvent = useCallback(
     async (eventId: string, form: RegistrationForm) => {
-      await registerEventApi(eventId, form);
+      let token: string | undefined;
+      try {
+        const { getAccessToken } = require('../services/auth-storage');
+        const storedToken = await getAccessToken();
+        if (storedToken) token = storedToken;
+      } catch {
+        // ignore in tests
+      }
+      await registerEventApi(eventId, form, undefined, token);
     },
     [],
   );

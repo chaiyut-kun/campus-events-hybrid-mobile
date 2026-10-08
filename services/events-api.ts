@@ -169,12 +169,16 @@ export async function registerEvent(
   eventId: string,
   form: RegistrationForm,
   signal?: AbortSignal,
+  token?: string,
 ): Promise<RegistrationResponse> {
   const baseUrl = getApiUrl();
 
   const response = await fetch(`${baseUrl}/events/${eventId}/registrations`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
     body: JSON.stringify(form),
     signal,
   });

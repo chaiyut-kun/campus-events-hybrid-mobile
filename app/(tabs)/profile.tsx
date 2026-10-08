@@ -8,6 +8,7 @@ import {
   Pressable,
   Switch,
   Linking,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -15,8 +16,10 @@ import { Ionicons, Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { colors, elevation, rounded, spacing } from '../../constants/theme';
 import { studentProfile } from '../../data/profile';
+import { useAuth } from '../../context/AuthContext';
 
 export default function ProfileScreen() {
+  const { session, logout } = useAuth();
   const [isDarkMode, setIsDarkMode] = useState(false);
 
   const handleOpenGithub = () => {
@@ -30,6 +33,24 @@ export default function ProfileScreen() {
       router.push('/');
     }
   };
+
+  const handleLogout = () => {
+    Alert.alert('ยืนยันออกจากระบบ', 'คุณต้องการออกจากระบบหรือไม่?', [
+      { text: 'ยกเลิก', style: 'cancel' },
+      {
+        text: 'ออกจากระบบ',
+        style: 'destructive',
+        onPress: () => logout(),
+      },
+    ]);
+  };
+
+  const displayName =
+    (session.status === 'authenticated' ? session.user.name : null) || studentProfile.name;
+  const displayId =
+    (session.status === 'authenticated' ? session.user.studentId : null) || studentProfile.studentId;
+  const displayFaculty =
+    (session.status === 'authenticated' ? session.user.faculty : null) || studentProfile.branch;
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
@@ -90,16 +111,16 @@ export default function ProfileScreen() {
           </View>
 
           {/* Student Info */}
-          <Text style={styles.studentName}>{studentProfile.name}</Text>
+          <Text style={styles.studentName}>{displayName}</Text>
           <View style={styles.branchRow}>
             <Ionicons name="school-outline" size={16} color={colors.secondary} />
-            <Text style={styles.branchText}>{studentProfile.branch}</Text>
+            <Text style={styles.branchText}>{displayFaculty}</Text>
           </View>
 
           {/* ID & Year Badges */}
           <View style={styles.badgesRow}>
             <View style={styles.idBadge}>
-              <Text style={styles.idBadgeText}>ID: {studentProfile.studentId}</Text>
+              <Text style={styles.idBadgeText}>ID: {displayId}</Text>
             </View>
             <View style={styles.yearBadge}>
               <Text style={styles.yearBadgeText}>{studentProfile.yearSem}</Text>
@@ -232,14 +253,30 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        {/* Log Out Button */}
-        <Pressable
-          style={({ pressed }) => [styles.logoutButton, pressed && styles.pressed]}
-          accessibilityRole="button"
-        >
-          <Ionicons name="log-out-outline" size={20} color={colors.error} />
-          <Text style={styles.logoutText}>Log Out</Text>
-        </Pressable>
+        {/* Auth Action: Log Out or Sign In */}
+        {session.status === 'authenticated' ? (
+          <Pressable
+            style={({ pressed }) => [styles.logoutButton, pressed && styles.pressed]}
+            onPress={handleLogout}
+            accessibilityRole="button"
+            accessibilityLabel="Log Out"
+            testID="logout-btn"
+          >
+            <Ionicons name="log-out-outline" size={20} color={colors.error} />
+            <Text style={styles.logoutText}>Log Out</Text>
+          </Pressable>
+        ) : (
+          <Pressable
+            style={({ pressed }) => [styles.loginNavButton, pressed && styles.pressed]}
+            onPress={() => router.push('/login')}
+            accessibilityRole="button"
+            accessibilityLabel="เข้าสู่ระบบ"
+            testID="login-nav-btn"
+          >
+            <Ionicons name="log-in-outline" size={20} color={colors.onPrimary} />
+            <Text style={styles.loginNavText}>เข้าสู่ระบบ (Sign In)</Text>
+          </Pressable>
+        )}
 
         {/* Footer */}
         <Text style={styles.footerText}>
@@ -605,6 +642,23 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
     color: colors.error,
+  },
+  loginNavButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.primary,
+    marginHorizontal: spacing.margin,
+    marginTop: spacing.lg,
+    paddingVertical: 14,
+    borderRadius: rounded.lg,
+    ...elevation.card,
+  },
+  loginNavText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: colors.onPrimary,
   },
   footerText: {
     textAlign: 'center',

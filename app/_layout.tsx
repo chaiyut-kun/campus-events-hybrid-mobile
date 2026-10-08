@@ -3,6 +3,7 @@ import { Stack, router } from 'expo-router';
 import * as Notifications from 'expo-notifications';
 import { FavoritesProvider } from '../context/FavoritesContext';
 import { EventsProvider } from '../context/EventsContext';
+import { AuthProvider } from '../context/AuthContext';
 import {
   configureNotificationHandler,
   extractEventIdFromResponse,
@@ -45,14 +46,20 @@ export default function RootLayout() {
   }, []);
 
   return (
-    <EventsProvider>
-      <FavoritesProvider>
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="events/[id]" options={{ headerShown: false }} />
-        </Stack>
-      </FavoritesProvider>
-    </EventsProvider>
+    <AuthProvider>
+      <EventsProvider>
+        <FavoritesProvider>
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="events/[id]" options={{ headerShown: false }} />
+            <Stack.Screen
+              name="login"
+              options={{ presentation: 'modal', headerShown: false }}
+            />
+          </Stack>
+        </FavoritesProvider>
+      </EventsProvider>
+    </AuthProvider>
   );
 }
 

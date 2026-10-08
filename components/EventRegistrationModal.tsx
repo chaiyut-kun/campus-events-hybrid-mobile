@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import {
   StyleSheet,
   Text,
@@ -12,11 +12,13 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import { colors, rounded, spacing, elevation } from '../constants/theme';
 import { RegistrationForm, RegistrationErrors } from '../types/registration';
 import { validateRegistration } from '../utils/validateRegistration';
 import { studentProfile } from '../data/profile';
 import { useEvents } from '../context/EventsContext';
+import { useAuth } from '../context/AuthContext';
 
 type Props = {
   visible: boolean;
@@ -45,11 +47,25 @@ const getInitialForm = (): RegistrationForm => ({
  */
 export function EventRegistrationModal({ visible, eventId, eventTitle, onClose }: Props) {
   const { registerForEvent } = useEvents();
+  const { session } = useAuth();
 
   const [form, setForm] = useState<RegistrationForm>(getInitialForm);
   const [errors, setErrors] = useState<RegistrationErrors>({});
   const [apiError, setApiError] = useState<string | null>(null);
   const [submitStatus, setSubmitStatus] = useState<SubmitStatus>('idle');
+
+  // Pre-fill profile data when user is authenticated
+  useEffect(() => {
+    if (session.status === 'authenticated') {
+      const u = session.user;
+      setForm((prev) => ({
+        ...prev,
+        fullName: u.name || prev.fullName,
+        studentId: u.studentId || prev.studentId,
+        faculty: u.faculty || prev.faculty,
+      }));
+    }
+  }, [session]);
 
   const formRef = useRef<RegistrationForm>(form);
   formRef.current = form;
@@ -162,6 +178,26 @@ export function EventRegistrationModal({ visible, eventId, eventTitle, onClose }
               {eventTitle}
             </Text>
           </View>
+
+          {/* Auth Notice Banner when anonymous */}
+          {session.status === 'anonymous' ? (
+            <Pressable
+              style={styles.authNoticeBanner}
+              onPress={() => {
+                onClose();
+                router.push('/login');
+              }}
+              accessibilityRole="button"
+              accessibilityLabel="เข้าสู่ระบบก่อนลงทะเบียน"
+              testID="registration-login-prompt"
+            >
+              <Ionicons name="person-circle-outline" size={18} color={colors.primary} />
+              <Text style={styles.authNoticeText}>
+                เข้าสู่ระบบเพื่อบันทึกประวัติการลงทะเบียนของคุณ
+              </Text>
+              <Text style={styles.authNoticeLink}>เข้าสู่ระบบ &rarr;</Text>
+            </Pressable>
+          ) : null}
 
           <ScrollView
             contentContainerStyle={styles.scrollContent}
@@ -513,5 +549,29 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     color: colors.onPrimary,
+  },
+  authNoticeBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.sm,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 8,
+    backgroundColor: '#DCF2E8',
+    borderRadius: rounded.md,
+    borderWidth: 1,
+    borderColor: '#B8E2CE',
+  },
+  authNoticeText: {
+    flex: 1,
+    fontSize: 12,
+    color: colors.primary,
+    fontWeight: '500',
+  },
+  authNoticeLink: {
+    fontSize: 12,
+    color: colors.primary,
+    fontWeight: '700',
   },
 });
