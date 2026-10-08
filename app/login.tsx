@@ -182,7 +182,7 @@ export default function LoginScreen() {
                 testID="demo-account-btn"
               >
                 <Ionicons name="school-outline" size={15} color={colors.primary} />
-                <Text style={styles.demoBtnText}>⚡ นศ. (Student)</Text>
+                <Text style={styles.demoBtnText}>นศ. (Student)</Text>
               </Pressable>
 
               <Pressable
@@ -198,7 +198,7 @@ export default function LoginScreen() {
               >
                 <Ionicons name="business-outline" size={15} color="#B8860B" />
                 <Text style={[styles.demoBtnText, styles.demoOrganizerBtnText]}>
-                  🏢 ผู้จัด (Organizer)
+                  ผู้จัด (Organizer)
                 </Text>
               </Pressable>
             </View>
