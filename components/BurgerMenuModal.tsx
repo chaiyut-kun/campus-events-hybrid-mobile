@@ -32,7 +32,7 @@ export function BurgerMenuModal({ visible, onClose }: BurgerMenuModalProps) {
     {
       title: 'Favorites',
       path: '/favorites',
-      icon: 'heart-outline' as const,
+      icon: 'star-outline' as const,
     },
     {
       title: 'Profile',

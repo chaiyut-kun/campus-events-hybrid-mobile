@@ -48,7 +48,7 @@ describe('Component Test: EventCard', () => {
     expect(getByText('Tech')).toBeTruthy();
     expect(getByText('Computer Lab 3')).toBeTruthy();
     expect(getByText('Hands-on cross platform development workshop.')).toBeTruthy();
-    expect(getByText('บันทึก')).toBeTruthy();
+    expect(getByText('รายการโปรด')).toBeTruthy();
   });
 
   it('renders fallback placeholder when imageUrl is omitted', async () => {
@@ -121,7 +121,7 @@ describe('Component Test: EventCard', () => {
       />
     );
 
-    expect(getByText('บันทึกแล้ว')).toBeTruthy();
+    expect(getByText('รายการโปรด')).toBeTruthy();
     expect(getByLabelText('นำ React Native Workshop ออกจากรายการโปรด')).toBeTruthy();
   });
 });

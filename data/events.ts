@@ -6,7 +6,7 @@ export const mockEvents: CampusEvent[] = [
     title: 'Campus Hackathon 2026: AI for Good',
     description:
       'Join 48 hours of intense coding, collaboration, and rapid prototyping to solve real-world sustainability challenges using modern mobile and AI technologies.',
-    startsAt: '2026-10-15T09:00:00Z',
+    startsAt: '2026-11-15T09:00:00Z',
     imageUrl: 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=800&auto=format&fit=crop&q=60',
     location: {
       name: 'Innovative Learning Hub, 4th Floor',

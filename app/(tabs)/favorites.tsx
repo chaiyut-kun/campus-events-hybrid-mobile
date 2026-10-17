@@ -29,7 +29,7 @@ export default function FavoritesScreen() {
       <View style={styles.header}>
         <View style={styles.headerTitleContainer}>
           <View style={styles.headerIconWrapper}>
-            <Ionicons name="heart" size={18} color={colors.primary} />
+            <Ionicons name="star" size={18} color={colors.primary} />
           </View>
           <Text style={styles.headerTitle}>รายการโปรด</Text>
         </View>

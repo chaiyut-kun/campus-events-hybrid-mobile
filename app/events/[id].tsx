@@ -177,9 +177,9 @@ export default function EventDetailScreen() {
           testID="detail-favorite-btn"
         >
           <Ionicons
-            name={isFav ? 'heart' : 'heart-outline'}
+            name={isFav ? 'star' : 'star-outline'}
             size={24}
-            color={isFav ? colors.error || '#BA1A1A' : colors.onSurfaceVariant}
+            color={isFav ? colors.primary : colors.onSurfaceVariant}
           />
         </Pressable>
       </View>

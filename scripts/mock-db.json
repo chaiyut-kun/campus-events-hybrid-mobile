@@ -23,6 +23,38 @@
   ],
   "events": [
     {
+      "id": "evt-1791448747087",
+      "title": "Present ความก้าวหน้า",
+      "category": "Technology",
+      "location": {
+        "name": "อาคารเรียนรวม 2",
+        "latitude": 17.8032424,
+        "longitude": 102.7477071
+      },
+      "description": "นำเสนอความก้าวหน้า",
+      "startsAt": "2026-10-15T08:39:06.580Z",
+      "imageUrl": "file:///data/user/0/host.exp.exponent/cache/ExperienceData/%2540anonymous%252Fcampus-events-f5a8b58b-9d35-450b-baf3-3ed7d9986d2e/Camera/1e32fd49-21b9-44cd-b2dd-f9e3b75fbe02.jpg",
+      "organizerId": "usr-002",
+      "organizerName": "วิภาดา รักเรียน",
+      "createdAt": "2026-10-08T08:39:07.087Z"
+    },
+    {
+      "id": "evt-1791447539202",
+      "title": "Present",
+      "category": "Technology",
+      "location": {
+        "name": "อาคารเรียนรวม 2",
+        "latitude": 17.8032203,
+        "longitude": 102.7477006
+      },
+      "description": "พรีเซนต์วิชา Hybrid",
+      "startsAt": "2026-10-15T08:18:58.672Z",
+      "imageUrl": "file:///data/user/0/host.exp.exponent/cache/ExperienceData/%2540anonymous%252Fcampus-events-f5a8b58b-9d35-450b-baf3-3ed7d9986d2e/ImagePicker/ee60554a-885d-47f6-9b1e-98c3bb95e5a4.jpeg",
+      "organizerId": "usr-002",
+      "organizerName": "วิภาดา รักเรียน",
+      "createdAt": "2026-10-08T08:18:59.202Z"
+    },
+    {
       "id": "evt-001",
       "title": "Campus Hackathon 2026: AI for Good",
       "description": "Join 48 hours of intense coding, collaboration, and rapid prototyping to solve real-world sustainability challenges using modern mobile and AI technologies.",
@@ -74,5 +106,16 @@
       "category": "Entertainment"
     }
   ],
-  "registrations": []
+  "registrations": [
+    {
+      "id": "reg-1791448633969",
+      "eventId": "evt-1791447539202",
+      "fullName": "สมชาย ใจดี",
+      "email": "exampl@gmail.com",
+      "studentId": "65070001",
+      "faculty": "คณะเทคโนโลยีสารสนเทศ",
+      "notes": "",
+      "registeredAt": "2026-10-08T08:37:13.969Z"
+    }
+  ]
 }

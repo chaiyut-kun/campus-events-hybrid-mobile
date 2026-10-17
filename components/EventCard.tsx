@@ -125,7 +125,7 @@ export function EventCard({
                 isFavorite && styles.favoriteButtonTextActive,
               ]}
             >
-              {isFavorite ? 'บันทึกแล้ว' : 'บันทึก'}
+              {'รายการโปรด'}
             </Text>
           </Pressable>
 

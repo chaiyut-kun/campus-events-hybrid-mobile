@@ -53,7 +53,7 @@ export default function EventsScreen() {
   } = useEvents();
 
   const [refreshing, setRefreshing] = useState(false);
-  const [filter, setFilter] = useState<'all' | 'saved'>('all');
+  const [filter, setFilter] = useState<'all' | 'favorite'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [registrationEventId, setRegistrationEventId] = useState<string | null>(null);
@@ -71,7 +71,7 @@ export default function EventsScreen() {
     let result = currentEvents;
 
     // Filter by Favorites Tab
-    if (filter === 'saved') {
+    if (filter === 'favorite') {
       result = result.filter((evt) => isFavorite(evt.id));
     }
 
@@ -241,24 +241,24 @@ export default function EventsScreen() {
         </Pressable>
 
         <Pressable
-          style={[styles.filterTab, filter === 'saved' && styles.filterTabActive]}
-          onPress={() => setFilter('saved')}
+          style={[styles.filterTab, filter === 'favorite' && styles.filterTabActive]}
+          onPress={() => setFilter('favorite')}
           accessibilityRole="button"
-          accessibilityLabel={`Show saved events, total ${savedCount}`}
+          accessibilityLabel={`Show favorite events, total ${savedCount}`}
           hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
         >
           <Ionicons
-            name={filter === 'saved' ? 'star' : 'star-outline'}
+            name={filter === 'favorite' ? 'star' : 'star-outline'}
             size={14}
-            color={filter === 'saved' ? colors.onPrimary : colors.outline}
+            color={filter === 'favorite' ? colors.onPrimary : colors.outline}
           />
           <Text
             style={[
               styles.filterTabText,
-              filter === 'saved' && styles.filterTabTextActive,
+              filter === 'favorite' && styles.filterTabTextActive,
             ]}
           >
-            Saved ({savedCount})
+            Favorite ({savedCount})
           </Text>
         </Pressable>
       </View>
@@ -305,28 +305,28 @@ export default function EventsScreen() {
               title={
                 searchQuery.trim()
                   ? 'ไม่พบกิจกรรมที่ตรงกับคำค้น'
-                  : filter === 'saved'
+                  : filter === 'favorite'
                     ? 'ยังไม่มีกิจกรรมที่บันทึกไว้'
                     : 'ไม่พบกิจกรรมในขณะนี้'
               }
               description={
                 searchQuery.trim()
                   ? `ไม่มีกิจกรรมที่ตรงกับ "${searchQuery}" ลองเปลี่ยนคำค้นดู`
-                  : filter === 'saved'
+                  : filter === 'favorite'
                     ? 'กดที่รูปดาวบนการ์ดกิจกรรมเพื่อบันทึกงานที่คุณสนใจลงในรายการโปรด'
                     : 'โปรดลองตรวจสอบการเชื่อมต่อ หรือกลับมาดูใหม่อีกครั้ง'
               }
               actionLabel={
                 searchQuery.trim()
                   ? 'ล้างคำค้นหา'
-                  : filter === 'saved'
+                  : filter === 'favorite'
                     ? 'ดูกิจกรรมทั้งหมด'
                     : 'รีเฟรชข้อมูล'
               }
               onAction={
                 searchQuery.trim()
                   ? () => setSearchQuery('')
-                  : filter === 'saved'
+                  : filter === 'favorite'
                     ? () => setFilter('all')
                     : handleRefresh
               }
@@ -463,9 +463,7 @@ export default function EventsScreen() {
                         styles.modalFavoriteBtnTextActive,
                     ]}
                   >
-                    {isFavorite(selectedEvent.id)
-                      ? 'บันทึกในรายการโปรดแล้ว'
-                      : 'เพิ่มลงในรายการโปรด'}
+                    {'รายการโปรด'}
                   </Text>
                 </Pressable>
 

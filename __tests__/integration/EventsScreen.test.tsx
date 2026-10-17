@@ -107,7 +107,7 @@ describe('Integration Test: EventsScreen', () => {
     const { getByLabelText, getByText, queryByText } = await renderEventsScreen();
 
     // 1. Initially on Saved tab with no favorites -> shows empty state
-    const savedFilterTab = getByLabelText('Show saved events, total 0');
+    const savedFilterTab = getByLabelText('Show favorite events, total 0');
     fireEvent.press(savedFilterTab);
 
     await waitFor(() => {
@@ -131,9 +131,9 @@ describe('Integration Test: EventsScreen', () => {
 
     // 4. Switch to Saved tab -> only favorited event is shown
     await waitFor(() => {
-      expect(getByLabelText('Show saved events, total 1')).toBeTruthy();
+      expect(getByLabelText('Show favorite events, total 1')).toBeTruthy();
     });
-    fireEvent.press(getByLabelText('Show saved events, total 1'));
+    fireEvent.press(getByLabelText('Show favorite events, total 1'));
 
     await waitFor(() => {
       expect(getByText('Campus Hackathon 2026: AI for Good')).toBeTruthy();
